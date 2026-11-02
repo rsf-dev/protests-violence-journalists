@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+<!-- publication:start -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-7V6CLM7vm4UN4sIl6yj48SLPGT9V7UN/BHUb/bC36NM='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self'; font-src 'self'; connect-src 'self'; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta name="app-version" content="8d6f03ce216738e3">
+<!-- publication:end -->
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>News City</title>
+  </head>
+  <body>
+    <p>404 · News City</p>
+    <!-- Compatibilité des anciennes adresses, sans dossiers de pays ni de langues. -->
+    <script>
+      const path = location.pathname;
+      const route = path.match(
+        /^(.*?\/)(?:(fr|en)\/)?(scrolly|story|carte|world|pays|countries)(?:\/([a-z]{2,3}))?(?:\/index\.html)?\/?$/i,
+      );
+      const languageRoot = path.match(/^(.*?\/)(fr|en)(?:\/index\.html)?\/?$/i);
+      const base = route?.[1] || languageRoot?.[1] || path.slice(0, path.lastIndexOf('/') + 1);
+      const target = new URL(base, location.origin);
+      const params = new URLSearchParams(location.search);
+      const lang =
+        route?.[2]?.toLowerCase() || languageRoot?.[2]?.toLowerCase() || params.get('lang');
+      if (lang === 'en') params.set('lang', 'en');
+      else params.delete('lang');
+      if (route) {
+        const view = route[3].toLowerCase();
+        if (['pays', 'countries'].includes(view) && route[4])
+          params.set('country', route[4].toLowerCase());
+        else if (['pays', 'countries', 'carte', 'world'].includes(view))
+          params.set('view', 'world');
+      }
+      target.search = params.toString();
+      target.hash = location.hash;
+      if (route || languageRoot || path.endsWith('/404.html')) location.replace(target.href);
+    </script>
+  </body>
+</html>

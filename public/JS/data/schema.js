@@ -1,0 +1,83 @@
+export const DATA_SCHEMA = {
+  authors: [
+    {
+      id: 'police',
+      sourceLabel: "Forces de l'ordre et autorités",
+      labelKey: 'actor.policeFull',
+      shortKey: 'actor.policeFull',
+      color: '#d64c55',
+    },
+    {
+      id: 'unknown',
+      sourceLabel: 'Inconnu',
+      labelKey: 'actor.unknown',
+      shortKey: 'actor.unknown',
+      color: '#a3a7ae',
+    },
+    {
+      id: 'protesters',
+      sourceLabel: 'Manifestants',
+      labelKey: 'actor.protesters',
+      shortKey: 'actor.protesters',
+      color: '#4c82b6',
+    },
+    {
+      id: 'unidentified',
+      sourceLabel: 'Individus non identifiés',
+      labelKey: 'actor.unidentifiedIndividuals',
+      shortKey: 'actor.unidentifiedShort',
+      color: '#839db5',
+    },
+    {
+      id: 'individuals',
+      sourceLabel: 'Particuliers',
+      labelKey: 'actor.individuals',
+      shortKey: 'actor.individuals',
+      color: '#478f75',
+    },
+  ],
+  violenceTypes: [
+    {
+      id: 'physical',
+      sourceLabel: 'Violence physique',
+      labelKey: 'type.physical',
+      shortKey: 'type.physicalShort',
+      color: '#292833',
+    },
+    {
+      id: 'arrest',
+      sourceLabel: 'Arrestation / détention',
+      labelKey: 'type.arrest',
+      shortKey: 'type.arrestShort',
+      color: '#986847',
+    },
+    {
+      id: 'verbal',
+      sourceLabel: 'Menace ou intimidation',
+      labelKey: 'type.verbal',
+      shortKey: 'type.verbalShort',
+      color: '#d6ac2f',
+    },
+    {
+      id: 'unspecified',
+      sourceLabel: 'Autre ou non précisé',
+      labelKey: 'type.unspecified',
+      shortKey: 'type.unspecifiedShort',
+      color: '#8f9499',
+    },
+    {
+      id: 'obstruction',
+      sourceLabel: 'Entrave, fouille ou contrôle abusifs',
+      labelKey: 'type.obstruction',
+      shortKey: 'type.obstructionShort',
+      color: '#4b83a2',
+    },
+    {
+      id: 'seizure',
+      sourceLabel: 'Saisie, dégradation ou vol de matériel',
+      labelKey: 'type.seizure',
+      shortKey: 'type.seizureShort',
+      color: '#43856d',
+    },
+  ],
+};

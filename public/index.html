@@ -2,26 +2,354 @@
 <html lang="fr">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>RSF Data</title>
-    <link rel="stylesheet" href="./styles.css" />
-    <!-- Ajuste la hauteur de l'iframe sur rsf.org (paragraphe « Dataviz »). À conserver. -->
-    <script async src="https://cdn.jsdelivr.net/npm/@iframe-resizer/child@5.5.7"></script>
+<!-- publication:start -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-SQMDm9NeZnrRs6+3/LiY5xP4UPJhurUld4pO5P4jtYk='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self'; font-src 'self'; connect-src 'self'; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta name="app-version" content="8d6f03ce216738e3">
+<link rel="icon" href="assets/icons/rsf-logo.svg?v=8d6f03ce216738e3" type="image/svg+xml">
+<link rel="preload" href="assets/fonts/Electrolize-Regular.ttf?v=8d6f03ce216738e3" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="css/styles.css?v=8d6f03ce216738e3" integrity="sha384-vP/6u+8VmQSVPT7VPkZ7zdunYwmKg2mUD7R3UmPBwXDbWv1VBDta6mryCSg4xyQS" crossorigin="anonymous">
+<script defer src="vendor/d3.min.js?v=8d6f03ce216738e3" integrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i" crossorigin="anonymous"></script>
+<script defer src="vendor/topojson-client.min.js?v=8d6f03ce216738e3" integrity="sha384-Ukv1p/xTma6P4/2bY5KzWBw+ydSpXmhCMtyciIQVDJ1RmOxtCYNMF1uXT9T63H67" crossorigin="anonymous"></script>
+<script type="importmap">
+{
+  "imports": {
+    "./JS/app.js": "./JS/app.js?v=8d6f03ce216738e3",
+    "./JS/config.js": "./JS/config.js?v=8d6f03ce216738e3",
+    "./JS/core/model.js": "./JS/core/model.js?v=8d6f03ce216738e3",
+    "./JS/core/resources.js": "./JS/core/resources.js?v=8d6f03ce216738e3",
+    "./JS/core/routing.js": "./JS/core/routing.js?v=8d6f03ce216738e3",
+    "./JS/core/security.js": "./JS/core/security.js?v=8d6f03ce216738e3",
+    "./JS/data/normalize.js": "./JS/data/normalize.js?v=8d6f03ce216738e3",
+    "./JS/data/schema.js": "./JS/data/schema.js?v=8d6f03ce216738e3",
+    "./JS/graphics/globe-motion.js": "./JS/graphics/globe-motion.js?v=8d6f03ce216738e3",
+    "./JS/graphics/scene.js": "./JS/graphics/scene.js?v=8d6f03ce216738e3",
+    "./JS/i18n/en.js": "./JS/i18n/en.js?v=8d6f03ce216738e3",
+    "./JS/i18n/fr.js": "./JS/i18n/fr.js?v=8d6f03ce216738e3",
+    "./JS/i18n/index.js": "./JS/i18n/index.js?v=8d6f03ce216738e3",
+    "./JS/reglages.js": "./JS/reglages.js?v=8d6f03ce216738e3"
+  }
+}
+</script>
+<script type="module" src="JS/app.js?v=8d6f03ce216738e3" integrity="sha384-1b/LlLuLl1tO3WMIKHOj7OF6IRpgx5zbjFep2aSVqb5nW7iwMb7n6bn/VPaJ1kyT" crossorigin="anonymous"></script>
+<!-- publication:end -->
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#fcfcfa" />
+    <meta
+      name="description"
+      content="Récit interactif et carte du monde des cas de violences contre les journalistes en manifestation, à partir des données fournies."
+    />
+    <title>Les violences contre les journalistes en manifestation en 2026</title>
+    <link rel="alternate" hreflang="fr" href="./" />
+    <link rel="alternate" hreflang="en" href="./?lang=en" />
   </head>
-  <body>
-    <header>
-      <h1>RSF Data</h1>
-      <p class="subtitle">Jeu de données publié via GitHub Pages</p>
+  <body data-page="scrolly" data-country="">
+    <div class="visual-stage" id="visual-stage">
+      <canvas
+        id="scene"
+        role="img"
+        aria-label="Plan animé de News City et parcours de manifestation"
+        data-i18n-aria-label="scene.initial"
+      ></canvas>
+      <div class="scene-wash" aria-hidden="true"></div>
+    </div>
+    <header class="site-header">
+      <a
+        class="brand header-brand"
+        href="./"
+        data-i18n-aria-label="brand.home"
+        aria-label="RSF — début du récit"
+        ><img
+          class="brand-logo"
+          src="assets/icons/rsf-logo.svg?v=8d6f03ce216738e3"
+          width="52"
+          height="36"
+          data-i18n-alt="brand.alt"
+          alt="RSF — Reporters sans frontières"
+      /></a>
+      <h1 class="infographic-title" data-i18n="page.title">
+        Les violences contre les journalistes en manifestation en 2026
+      </h1>
     </header>
     <main>
-      <p>
-        Remplacez le contenu du dossier <code>public/</code> par votre site
-        statique. Chaque commit sur <code>main</code> redéploie automatiquement
-        cette page sur GitHub Pages.
-      </p>
+      <section
+        class="scrolly"
+        id="story"
+        aria-label="Récit au défilement"
+        data-i18n-aria-label="story.label"
+      >
+        <article class="story-step" id="news-city" data-step="0">
+          <div class="step-card">
+            <h2 tabindex="-1" data-i18n="story.intro.title">Ceci est News City</h2>
+            <p data-i18n="story.intro.description">
+              Une ville fictive où se déroule aujourd'hui une manifestation.
+            </p>
+          </div>
+        </article>
+        <article class="story-step" id="cent-journalistes" data-step="1">
+          <div class="step-card">
+            <h2 data-i18n="story.neutral.title">
+              À News City, 100 journalistes vont subir des violences en couvrant la manifestation
+              d'aujourd'hui.
+            </h2>
+            <p data-i18n="story.neutral.description">
+              Cette représentation fictive représente la répartition des 206 cas recensés en 2026,
+              quelles violences ont-ils subies et par qui, en pourcentage.
+            </p>
+          </div>
+        </article>
+        <article class="story-step" id="forces-ordre" data-step="2">
+          <div class="step-card">
+            <h2 data-i18n="story.police.title">
+              Sur 100 journalistes représentant les cas recensés,
+            </h2>
+            <p data-i18n="story.police.police">
+              69 représentent des cas attribués aux forces de l’ordre et autorités.
+            </p>
+            <p data-i18n="story.police.other">
+              Les 31 autres représentent les cas attribués aux manifestants, aux particuliers, aux
+              individus non identifiés ou à un auteur inconnu.
+            </p>
+          </div>
+        </article>
+        <article class="story-step" id="violences-police" data-step="3">
+          <div class="step-card">
+            <h2 data-i18n="story.policeTypes.title">
+              Pour les cas attribués aux forces de l’ordre et autorités, les violences se
+              répartissent ainsi :
+            </h2>
+            <ul
+              class="violence-list"
+              id="police-violence-list"
+              aria-label="Pour les cas attribués aux forces de l’ordre et autorités, les violences se répartissent ainsi :"
+              data-i18n-aria-label="story.policeTypes.title"
+            ></ul>
+          </div>
+        </article>
+        <article class="story-step" id="autres-auteurs" data-step="4">
+          <div class="step-card">
+            <h2 data-i18n="story.otherTypes.title">
+              Pour les autres catégories d’auteurs, les violences se répartissent ainsi :
+            </h2>
+            <ul
+              class="violence-list"
+              id="other-violence-list"
+              aria-label="Pour les autres catégories d’auteurs, les violences se répartissent ainsi :"
+              data-i18n-aria-label="story.otherTypes.title"
+            ></ul>
+          </div>
+        </article>
+        <article class="story-step" id="ville-type" data-step="5">
+          <div class="step-card">
+            <h2 data-i18n="story.overview.title">Aller plus loin</h2>
+            <p data-i18n="story.overview.description">
+              En 2026, RSF recense donc 206 violences contre des journalistes en manifestation
+              réparties dans 20 pays.
+            </p>
+            <a class="text-action" id="world-data-link" href="./"
+              ><span data-i18n="story.worldAction">Voir les données mondiales</span
+              ><span aria-hidden="true">→</span></a
+            >
+          </div>
+        </article>
+      </section>
+      <section
+        class="explorer"
+        id="explorer"
+        aria-label="Détails de la carte"
+        data-i18n-aria-label="panel.label"
+      >
+        <button
+          class="explorer-toggle"
+          id="explorer-toggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="explorer-content"
+        >
+          <span class="sr-only" id="explorer-toggle-label">Ouvrir les détails</span
+          ><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6" /></svg>
+        </button>
+        <div class="explorer-surface">
+          <button
+            class="panel-close"
+            id="explorer-close"
+            type="button"
+            aria-label="Fermer les détails"
+            data-i18n-aria-label="panel.close"
+          >
+            ×
+          </button>
+          <aside
+            class="explorer-panel"
+            id="explorer-content"
+            aria-labelledby="explorer-title"
+            tabindex="0"
+            hidden
+            inert
+          >
+            <div class="explorer-heading">
+              <h2 id="explorer-title" tabindex="-1">Explorer les 20 pays</h2>
+              <p id="explorer-description" data-i18n="panel.worldDescription">
+                Cliquez sur un pays pour voir le détail.
+              </p>
+            </div>
+            <div id="world-panel">
+              <div class="world-totals">
+                <div>
+                  <strong id="country-total">0</strong>
+                  <span data-i18n="panel.countries">pays</span>
+                </div>
+                <div>
+                  <strong id="world-total">0</strong>
+                  <span data-i18n="panel.cases">cas recensés</span>
+                </div>
+              </div>
+              <div
+                class="country-chart-legend"
+                id="country-chart-legend"
+                role="group"
+                aria-label="Auteurs des violences dans les pays"
+                data-i18n-aria-label="chart.legend"
+              ></div>
+              <div
+                class="country-list"
+                id="country-list"
+                role="group"
+                aria-label="Explorer un pays"
+                data-i18n-aria-label="panel.countryList"
+              ></div>
+            </div>
+            <div id="city-panel" hidden>
+              <div class="city-count">
+                <strong id="city-total">0</strong>
+                <span data-i18n="panel.cases">cas recensés</span>
+              </div>
+              <div class="actor-counts" id="actor-counts"></div>
+              <table class="violence-table">
+                <caption data-i18n="panel.violenceCaption">
+                  Types de violences répertoriées
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col" data-i18n="panel.violence">Violence</th>
+                    <th scope="col" data-i18n="panel.casesColumn">Cas</th>
+                    <th scope="col" data-i18n="panel.authorsColumn">Auteurs</th>
+                  </tr>
+                </thead>
+                <tbody id="violence-rows"></tbody>
+              </table>
+              <details class="journalist-access">
+                <summary data-i18n="record.access">Consulter une fiche de cas</summary>
+                <label for="journalist-select" data-i18n="record.selectLabel">Cas</label
+                ><select id="journalist-select">
+                  <option value="" data-i18n="record.selectPlaceholder">Choisir un cas</option>
+                </select>
+              </details>
+            </div>
+          </aside>
+        </div>
+      </section>
     </main>
-    <footer>
-      <p>© Reporters sans frontières</p>
+    <footer class="page-footer">
+      <nav
+        class="story-progress"
+        id="story-progress"
+        aria-label="Parcourir le récit"
+        data-i18n-aria-label="nav.progress"
+      ></nav>
+      <div class="footer-line">
+        <nav class="footer-actions" aria-label="Navigation" data-i18n-aria-label="nav.label">
+          <a
+            id="reset-button"
+            href="./"
+            aria-label="Recommencer toute l’introduction"
+            data-i18n-aria-label="nav.restartLabel"
+            ><svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 8a8 8 0 1 1-.2 8M5 3v5h5" /></svg
+            ><span data-i18n="nav.restart">Recommencer</span></a
+          ><a id="return-map-button" href="./" hidden
+            ><span data-i18n="nav.countries">Revenir aux pays</span
+            ><span aria-hidden="true">↗</span></a
+          >
+        </nav>
+        <div class="footer-branding">
+          <p class="footer-credits" data-i18n="footer.credits" data-i18n-title="footer.credits">
+            Illustrations RSF · données issues du monitoring de Reporters sans Frontières· 2026
+          </p>
+          <a
+            class="brand footer-brand"
+            href="./"
+            data-i18n-aria-label="brand.home"
+            aria-label="RSF — début du récit"
+            ><img
+              class="brand-logo"
+              src="assets/icons/rsf-logo.svg?v=8d6f03ce216738e3"
+              width="36"
+              height="25"
+              data-i18n-alt="brand.alt"
+              alt="RSF — Reporters sans frontières"
+          /></a>
+        </div>
+      </div>
     </footer>
+    <p class="globe-hint" id="globe-hint" hidden>
+      Glissez pour tourner · cliquez sur un pays pour sa répartition
+    </p>
+    <div class="tooltip" id="tooltip" role="status" hidden></div>
+    <section
+      class="journalist-popover"
+      id="journalist-popover"
+      role="dialog"
+      aria-modal="false"
+      aria-labelledby="journalist-title"
+      hidden
+    >
+      <button
+        class="popover-close"
+        id="close-journalist"
+        type="button"
+        aria-label="Fermer la fiche du cas"
+        data-i18n-aria-label="record.close"
+      >
+        ×
+      </button>
+      <h2 id="journalist-title"></h2>
+      <dl id="journalist-details"></dl>
+    </section>
+    <div class="loading" id="loading" aria-busy="true">
+      <section class="loading-box" aria-labelledby="loading-title">
+        <h2 class="loading-title" id="loading-title" data-i18n="loading.brand">RSF Data</h2>
+        <p class="loading-subtitle" data-i18n="loading.description">
+          Violences contre les journalistes en manifestation
+        </p>
+        <div
+          class="loading-bar"
+          id="loading-progress"
+          role="progressbar"
+          aria-labelledby="loading-title"
+          aria-describedby="loading-status"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+        >
+          <span class="loading-bar-fill" id="loading-bar-fill"></span>
+        </div>
+        <p class="loading-subtext" id="loading-status" role="status" data-i18n="loading">
+          Chargement de l’infographie…
+        </p>
+        <button
+          class="loading-retry"
+          id="loading-retry"
+          type="button"
+          data-i18n="loading.retry"
+          hidden
+        >
+          Réessayer
+        </button>
+      </section>
+    </div>
+    <p class="sr-only" id="accessible-summary" aria-live="polite" aria-atomic="true"></p>
+    <noscript data-i18n="noscript">Activez JavaScript pour lire ce récit interactif.</noscript>
   </body>
 </html>

@@ -1,0 +1,36 @@
+{
+  "version": "8d6f03ce216738e3",
+  "dependencies": [
+    {
+      "file": "vendor/d3.min.js",
+      "name": "D3",
+      "version": "7.9.0",
+      "source": "https://github.com/d3/d3/tree/v7.9.0",
+      "sha256": "f2094bbf6141b359722c4fe454eb6c4b0f0e42cc10cc7af921fc158fceb86539",
+      "integrity": "sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i"
+    },
+    {
+      "file": "vendor/topojson-client.min.js",
+      "name": "TopoJSON Client",
+      "version": "3.1.0",
+      "source": "https://github.com/topojson/topojson-client/tree/v3.1.0",
+      "sha256": "25cd02ae486cc5063e0215a4e4cfb15de83700c87ac48bac4d57dc6aaf3ebb89",
+      "integrity": "sha384-Ukv1p/xTma6P4/2bY5KzWBw+ydSpXmhCMtyciIQVDJ1RmOxtCYNMF1uXT9T63H67"
+    },
+    {
+      "file": "world-110m.json",
+      "name": "World Atlas",
+      "version": "2.0.2",
+      "source": "https://github.com/topojson/world-atlas/tree/v2.0.2",
+      "sha256": "2516c915867c7baf18ddec727aec46c315541a07cfb3d79a6559b05d5e94eee8",
+      "integrity": "sha384-yOCJ+8ShBm8UDqtAVtAvxTDDf4gXo5edxl/YG0FmVC5OTmqVLl7utuVGBDEeZWHf"
+    },
+    {
+      "file": "assets/fonts/Electrolize-Regular.ttf",
+      "name": "Electrolize",
+      "source": "https://github.com/google/fonts/tree/main/ofl/electrolize",
+      "sha256": "aa81ab9015fc0190bb5e68c50290565c7a4a723ddf32b88774aaff05cdd66bca",
+      "integrity": "sha384-GvQnBs7EMRCS/8rETTxcCEv0DqwwIZJzrLcVH8sdaQnPfZ5iVVzbtmUDJGPRvzjD"
+    }
+  ]
+}
