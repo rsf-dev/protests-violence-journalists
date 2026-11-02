@@ -1,0 +1,65 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+env:
+  DOMAIN: rsf.org
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: https://${{ steps.vars.outputs.fqdn }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compute names
+        id: vars
+        run: |
+          set -euo pipefail
+          repo_name="${GITHUB_REPOSITORY##*/}"
+          # Normalize: lowercase, alphanumeric + hyphens only
+          subdomain="$(echo "${repo_name}" | tr '[:upper:]' '[:lower:]' \
+            | sed -E 's/[^a-z0-9-]+/-/g; s/-+/-/g; s/^-|-$//g')"
+          fqdn="${subdomain}.data.${DOMAIN}"
+          echo "subdomain=${subdomain}" >> "$GITHUB_OUTPUT"
+          echo "fqdn=${fqdn}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate CNAME
+        run: |
+          echo "${{ steps.vars.outputs.fqdn }}" > public/CNAME
+
+      - name: Set custom domain
+        run: |
+          curl -s -X PUT \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pages" \
+            -d '{"cname":"${{ steps.vars.outputs.fqdn }}"}' > /dev/null
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public/
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Output URL
+        run: |
+          echo "Deployed to: https://${{ steps.vars.outputs.fqdn }}"

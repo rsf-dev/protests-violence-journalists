@@ -1,0 +1,14 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+
+# Wrangler / Cloudflare local state
+.wrangler/
+node_modules/
+
+# CNAME généré dynamiquement par le workflow
+public/CNAME
+
+# Common build output (uncomment if you add a build step)
+# dist/
