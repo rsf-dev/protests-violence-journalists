@@ -139,55 +139,6 @@ export function worldStats(records) {
   };
 }
 
-export function journalistDetails(record, config) {
-  const { i18n } = config,
-    { t } = i18n;
-  const authors = Object.fromEntries(config.authors.map((author) => [author.id, author.label]));
-  const known = [
-    ['id', t('field.id'), record.id],
-    ['date', t('field.date'), i18n.dateLabel(record.date)],
-    ['country', t('field.country'), i18n.countryName(record.countryCode, record.country)],
-    ['region', t('field.region'), i18n.regionName(record.region)],
-    ['city', t('field.city'), i18n.cityName(record.city)],
-    ['media', t('field.media'), i18n.mediaName(record.media)],
-    ['author', t('field.author'), authors[record.author] || record.author],
-    [
-      'violenceType',
-      t('field.violenceType'),
-      config.violenceTypes.find((type) => type.id === record.violenceType)?.label ||
-        record.violenceType,
-    ],
-    ['source', t('field.source'), record.source || t('record.sourceMissing')],
-  ];
-  const excluded = new Set([
-    ...known.map(([key]) => key),
-    'journalistLabel',
-    'typicalOrder',
-    'countryCode',
-    'longitude',
-    'latitude',
-    'year',
-    'synthetic',
-    'sourceRow',
-    'representative',
-  ]);
-  const extra = Object.entries(record)
-    .filter(([key, value]) => !excluded.has(key) && value != null)
-    .map(([key, value]) => [
-      key,
-      key,
-      typeof value === 'object' ? JSON.stringify(value) : String(value),
-    ]);
-  return [...known, ...extra]
-    .filter(([, , value]) => value != null && value !== '')
-    .map(([key, label, value]) => ({
-      key,
-      label,
-      value: String(value),
-      ...(key === 'source' && safeSourceURL(value) ? { href: safeSourceURL(value) } : {}),
-    }));
-}
-
 /** Point du bord du libellé, jamais à l’intérieur de la boîte. */
 export function calloutConnector(box, target) {
   const x = Math.max(box.x, Math.min(box.x + box.width, target.x));
@@ -470,22 +421,10 @@ export function deriveScene(state, data, config) {
   };
 }
 
-export function isGlobeVisible(longitude, latitude, rotation) {
-  const radians = Math.PI / 180,
-    lat = latitude * radians,
-    centerLat = -rotation[1] * radians;
-  return (
-    Math.sin(lat) * Math.sin(centerLat) +
-      Math.cos(lat) * Math.cos(centerLat) * Math.cos((longitude + rotation[0]) * radians) >
-    0.06
-  );
-}
-
 export function createController(data, config) {
-  const state = { slide: 0, inExplore: false, view: 'world', countryId: null, journalistId: null };
+  const state = { slide: 0, inExplore: false, view: 'world', countryId: null };
   const listeners = new Set(),
     countryIds = new Set(groupCountries(data.records).map((group) => group.id));
-  const recordById = new Map(data.records.map((record) => [record.id, record]));
   const update = (patch) => {
     if (Object.entries(patch).every(([key, value]) => state[key] === value)) return false;
     Object.assign(state, patch);
@@ -503,20 +442,11 @@ export function createController(data, config) {
       return update({
         slide: next,
         inExplore: false,
-        journalistId: next === state.slide && !state.inExplore ? state.journalistId : null,
       });
     },
-    skip: () => update({ inExplore: true, view: 'world', countryId: null, journalistId: null }),
-    replay: () =>
-      update({ slide: 0, inExplore: false, view: 'world', countryId: null, journalistId: null }),
+    skip: () => update({ inExplore: true, view: 'world', countryId: null }),
+    replay: () => update({ slide: 0, inExplore: false, view: 'world', countryId: null }),
     selectCountry: (id) =>
-      countryIds.has(id) &&
-      update({ inExplore: true, view: 'country', countryId: id, journalistId: null }),
-    selectJournalist: (id) =>
-      state.inExplore &&
-      state.view === 'country' &&
-      recordById.get(id)?.countryCode === state.countryId &&
-      update({ journalistId: id }),
-    closeJournalist: () => update({ journalistId: null }),
+      countryIds.has(id) && update({ inExplore: true, view: 'country', countryId: id }),
   };
 }

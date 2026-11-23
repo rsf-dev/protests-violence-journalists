@@ -1,14 +1,11 @@
 import {
   deriveScene,
-  groupCountries,
   layoutRouteRecords,
   pointOnRoute,
   routeMetrics,
-  isGlobeVisible,
   layoutCallouts,
   calloutConnector,
 } from '../core/model.js';
-import { createGlobeMotion } from './globe-motion.js';
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
@@ -17,16 +14,10 @@ export function createRenderer(
   images,
   data,
   config,
-  {
-    d3,
-    world = null,
-    requestFrame = requestAnimationFrame,
-    cancelFrame = cancelAnimationFrame,
-  } = {},
+  { requestFrame = requestAnimationFrame, cancelFrame = cancelAnimationFrame } = {},
 ) {
   const ctx = canvas.getContext('2d'),
     metrics = routeMetrics(config.route),
-    countries = groupCountries(data.records, config.language),
     { t } = config.i18n;
   let width = 1,
     height = 1,
@@ -34,33 +25,23 @@ export function createRenderer(
     handle = null,
     previous = 0,
     clock = 0,
-    age = 0,
-    rotationHold = 0;
+    age = 0;
   let state,
     scene,
     cityScene,
     reduced = false,
     suspended = false,
-    hovered = null,
-    markers = [],
-    journalists = [],
+    countryPoints = [],
     annotations = [];
   let points = [],
     recordKey = '',
     graphMix = 0,
-    worldMix = 0,
     calloutLayout = null;
-  const camera = { x: 775, y: 530, zoom: 1.65 },
-    rotation = [-12, -18];
-  const globeMotion = createGlobeMotion(rotation, config.globeMotion);
+  const camera = { x: 775, y: 530, zoom: 1.65 };
   let cameraTarget = { ...camera },
-    graphTarget = 0,
-    worldTarget = 0;
+    graphTarget = 0;
   const typeById = new Map(config.violenceTypes.map((type) => [type.id, type]));
   const authorById = new Map(config.authors.map((author) => [author.id, author]));
-  const globeProjection = d3.geoOrthographic().clipAngle(90),
-    globePath = d3.geoPath(globeProjection, ctx),
-    graticule = d3.geoGraticule10();
   const mobile = () => width < 760;
   const instant = () => reduced;
   function cityFrame() {
@@ -129,7 +110,8 @@ export function createRenderer(
   }
   function setState(next, prefersReduced = false) {
     const nextScene = deriveScene(next, data, config);
-    if (nextScene.kind !== 'world' || prefersReduced) globeMotion.stop();
+    if (nextScene.kind === 'world')
+      throw new Error('Use the world map renderer for the world view.');
     const enteringRoute = scene?.kind === 'intro' && nextScene.kind === 'city';
     if (!scene || nextScene.phase !== scene.phase || nextScene.country?.id !== scene.country?.id) {
       age = 0;
@@ -139,10 +121,9 @@ export function createRenderer(
     reduced = prefersReduced;
     scene = nextScene;
     graphTarget = scene.kind === 'intro' ? 0 : 1;
-    worldTarget = scene.kind === 'world' ? 1 : 0;
-    if (scene.kind !== 'world') cityScene = scene;
+    cityScene = scene;
     updateCameraTarget();
-    if (scene.kind !== 'world') {
+    {
       const key = scene.records.map((record) => record.id).join('|');
       if (key !== recordKey) calloutLayout = null;
       const layout = layoutRouteRecords(
@@ -167,7 +148,6 @@ export function createRenderer(
     }
     if (instant()) {
       graphMix = graphTarget;
-      worldMix = worldTarget;
       for (const point of points) {
         point.currentProgress = point.progress;
         point.currentLane = point.lane;
@@ -245,7 +225,7 @@ export function createRenderer(
       const label = cityScene.country
         ? authorById.get(group.id).short
         : group.id === 'unit'
-          ? t('scene.unit')
+          ? t('scene.unit', { year: config.year })
           : group.id === 'police'
             ? t('actor.policeFull')
             : group.id === 'other'
@@ -341,7 +321,7 @@ export function createRenderer(
       : mobile()
         ? Math.min(config.callouts.mobileWidth, (width - 36) / 2)
         : config.callouts.desktopWidth;
-    ctx.font = `${fontSize}px Electrolize, sans-serif`;
+    ctx.font = `${fontSize}px Arial, sans-serif`;
     ctx.textAlign = 'left';
     if (!calloutLayout) calloutLayout = prepareCallouts(fontSize, maxWidth, anchorX, anchorY);
     annotations = calloutLayout.map((item) => ({
@@ -370,8 +350,8 @@ export function createRenderer(
           (config.animation.pointRadius +
             (cityScene.outlined ? config.animation.pointOutlineWidth / 2 : 0)) *
           scale;
-        ctx.strokeStyle = '#888d98cc';
-        ctx.lineWidth = 1;
+        ctx.strokeStyle = '#768a9680';
+        ctx.lineWidth = 0.65;
         ctx.beginPath();
         ctx.moveTo(connector.x, connector.y);
         ctx.lineTo(
@@ -388,8 +368,8 @@ export function createRenderer(
       ctx.roundRect(box.x, box.y, box.width, box.height, 4);
       ctx.fillStyle = '#fffffff2';
       ctx.fill();
-      ctx.strokeStyle = '#e1e2e6';
-      ctx.lineWidth = 0.7;
+      ctx.strokeStyle = '#dbe3e7';
+      ctx.lineWidth = 0.5;
       ctx.stroke();
       ctx.save();
       ctx.beginPath();
@@ -410,8 +390,8 @@ export function createRenderer(
       ctx.strokeStyle = item.color;
       ctx.lineWidth = 1.5;
       ctx.stroke();
-      ctx.fillStyle = '#616773';
-      ctx.font = `${fontSize}px Electrolize, sans-serif`;
+      ctx.fillStyle = '#324b57';
+      ctx.font = `${fontSize}px Arial, sans-serif`;
       item.lines.forEach((text, i) =>
         ctx.fillText(text, box.x + 29, box.y + 20 + i * (fontSize + 4)),
       );
@@ -433,6 +413,7 @@ export function createRenderer(
     const introY = (mobile() ? height * 0.31 : height / 2) - (intro.height * introScale) / 2;
     if (graphMix < 0.999) {
       ctx.globalAlpha = alpha * (1 - graphMix);
+      ctx.filter = 'saturate(0.55) contrast(0.96)';
       ctx.drawImage(
         intro,
         (width - intro.width * introScale) / 2,
@@ -440,6 +421,7 @@ export function createRenderer(
         intro.width * introScale,
         intro.height * introScale,
       );
+      ctx.filter = 'none';
     }
     if (graphMix > 0.001) {
       const frame = cityFrame(),
@@ -450,7 +432,9 @@ export function createRenderer(
       ctx.translate(anchorX, anchorY);
       ctx.scale(scale, scale);
       ctx.translate(-camera.x, -camera.y);
+      ctx.filter = 'saturate(0.55) contrast(0.96)';
       ctx.drawImage(graph, 0, 0, 1448, 1086);
+      ctx.filter = 'none';
       // Masquer les bords noirs intégrés au PNG, y compris pendant un fondu.
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
@@ -483,7 +467,7 @@ export function createRenderer(
         if (!['intro', 'neutral'].includes(cityScene?.phase)) {
           ctx.lineWidth = config.route.width - 4;
           if (cityScene.summary.policeShare > 0) {
-            ctx.strokeStyle = '#d64c5516';
+            ctx.strokeStyle = '#cf304a12';
             routePath(0, cityScene.summary.policeShare);
             ctx.stroke();
           }
@@ -491,7 +475,7 @@ export function createRenderer(
             cityScene.summary.policeShare < 1 &&
             ['police', 'other-types', 'overview'].includes(cityScene.phase)
           ) {
-            ctx.strokeStyle = '#4c82b61a';
+            ctx.strokeStyle = '#356fa414';
             routePath(cityScene.summary.policeShare, 1);
             ctx.stroke();
           }
@@ -519,26 +503,18 @@ export function createRenderer(
           if (scene.country && scene.kind === 'city') {
             const x = anchorX + (position.x - camera.x) * scale,
               y = anchorY + (position.y - camera.y) * scale;
-            journalists.push({
+            countryPoints.push({
               record: point.record,
               countryId: scene.country.id,
               x,
               y,
-              radius: (radius + config.animation.pointOutlineWidth / 2) * scale,
             });
-            if (state.journalistId === point.record.id) {
-              ctx.beginPath();
-              ctx.arc(position.x, position.y, radius + 3 / scale, 0, Math.PI * 2);
-              ctx.strokeStyle = '#4b5363';
-              ctx.lineWidth = 1 / scale;
-              ctx.stroke();
-            }
           }
           livePositions.set(point.record.id, position);
         }
         ctx.globalAlpha = alpha * graphMix;
         ctx.fillStyle = '#777b83';
-        ctx.font = `${10 / scale}px Electrolize, sans-serif`;
+        ctx.font = `${10 / scale}px Arial, sans-serif`;
         ctx.textAlign = 'left';
         const first = metrics.segments[0].a,
           last = metrics.segments.at(-1).b;
@@ -548,7 +524,7 @@ export function createRenderer(
         }
         if (cityScene.phase === 'police') {
           const boundary = pointOnRoute(metrics, cityScene.summary.policeShare);
-          ctx.strokeStyle = '#d64c55';
+          ctx.strokeStyle = '#cf304a';
           ctx.lineWidth = 1 / scale;
           ctx.beginPath();
           ctx.moveTo(boundary.x - boundary.uy * 13, boundary.y + boundary.ux * 13);
@@ -561,152 +537,6 @@ export function createRenderer(
     ctx.restore();
   }
 
-  function countrySlots(count) {
-    const angle = Math.PI * (3 - Math.sqrt(5));
-    return Array.from({ length: count }, (_, i) => {
-      const radius = Math.sqrt((i + 0.5) / Math.max(1, count));
-      return { x: Math.cos(i * angle) * radius, y: Math.sin(i * angle) * radius };
-    });
-  }
-  const slots = new Map(countries.map((country) => [country.id, countrySlots(country.count)]));
-  function drawWorld(alpha) {
-    markers = [];
-    if (alpha < 0.001) return;
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    const availableHeight = height,
-      cx = width * 0.5,
-      cy = 65 + (availableHeight - 65) * 0.5;
-    const radius = Math.min(width * 0.44, Math.max(1, availableHeight - 100) * 0.46);
-    const projection = globeProjection.translate([cx, cy]).scale(radius).rotate(rotation),
-      path = globePath;
-    ctx.save();
-    ctx.shadowColor = '#829ba32b';
-    ctx.shadowBlur = 30;
-    ctx.shadowOffsetY = 15;
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-    ctx.fillStyle = '#e5edf0';
-    ctx.fill();
-    ctx.restore();
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-    ctx.clip();
-    const ocean = ctx.createRadialGradient(
-      cx - radius * 0.4,
-      cy - radius * 0.4,
-      0,
-      cx,
-      cy,
-      radius * 1.2,
-    );
-    ocean.addColorStop(0, '#f7fbfc');
-    ocean.addColorStop(1, '#d9e3e8');
-    ctx.fillStyle = ocean;
-    ctx.fillRect(cx - radius, cy - radius, radius * 2, radius * 2);
-    ctx.beginPath();
-    path(graticule);
-    ctx.strokeStyle = '#b8cbd565';
-    ctx.lineWidth = 0.5;
-    ctx.stroke();
-    if (world) {
-      ctx.beginPath();
-      path(world);
-      ctx.fillStyle = '#fcfcf8';
-      ctx.fill();
-      ctx.strokeStyle = '#bac6ca';
-      ctx.lineWidth = 0.5;
-      ctx.stroke();
-    }
-    const shade = ctx.createRadialGradient(
-      cx - radius * 0.35,
-      cy - radius * 0.4,
-      radius * 0.1,
-      cx,
-      cy,
-      radius,
-    );
-    shade.addColorStop(0, '#ffffff00');
-    shade.addColorStop(0.76, '#7b929700');
-    shade.addColorStop(1, '#63798438');
-    ctx.fillStyle = shade;
-    ctx.fillRect(cx - radius, cy - radius, radius * 2, radius * 2);
-    ctx.restore();
-    const visible = countries
-      .filter((country) => isGlobeVisible(country.longitude, country.latitude, rotation))
-      .map((country) => {
-        const [x, y] = projection([country.longitude, country.latitude]);
-        return {
-          ...country,
-          x,
-          y,
-          anchorX: x,
-          anchorY: y,
-          radius: Math.sqrt(country.count) * (mobile() ? 2.35 : 2.9) + 3,
-        };
-      });
-    // Séparer les nuées voisines tout en rappelant leur ancrage géographique.
-    for (let step = 0; step < 8; step++)
-      for (let i = 0; i < visible.length; i++)
-        for (let j = i + 1; j < visible.length; j++) {
-          const a = visible[i],
-            b = visible[j],
-            dx = b.x - a.x,
-            dy = b.y - a.y,
-            distance = Math.hypot(dx, dy) || 0.01,
-            minimum = a.radius + b.radius + 6;
-          if (distance >= minimum) continue;
-          const push = (minimum - distance) * 0.51,
-            ux = distance > 0.02 ? dx / distance : 1,
-            uy = distance > 0.02 ? dy / distance : 0;
-          a.x -= ux * push;
-          a.y -= uy * push;
-          b.x += ux * push;
-          b.y += uy * push;
-        }
-    for (const country of visible) {
-      const active = hovered === country.id;
-      ctx.beginPath();
-      ctx.moveTo(country.anchorX, country.anchorY);
-      ctx.lineTo(country.x, country.y);
-      ctx.strokeStyle = '#aebac2';
-      ctx.lineWidth = 0.7;
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(country.x, country.y, country.radius + 3, 0, Math.PI * 2);
-      ctx.fillStyle = active ? '#fff' : '#ffffffc9';
-      ctx.fill();
-      ctx.strokeStyle = active ? '#8f879c' : '#c4cbd3';
-      ctx.lineWidth = active ? 1.2 : 0.7;
-      ctx.stroke();
-      country.records.forEach((record, index) => {
-        const slot = slots.get(country.id)[index],
-          spread = country.radius - 3;
-        const x = country.x + slot.x * spread,
-          y = country.y + slot.y * spread,
-          radius = mobile()
-            ? config.animation.mobileGlobePointRadius
-            : config.animation.globePointRadius;
-        ctx.beginPath();
-        ctx.arc(x, y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = authorById.get(record.author).color;
-        ctx.fill();
-      });
-      if (active || (country.count >= 16 && !mobile())) {
-        const label = `${country.label} · ${country.count}`;
-        ctx.font = `${mobile() ? config.callouts.mobileFontSize : config.callouts.desktopFontSize}px Electrolize, sans-serif`;
-        ctx.textAlign = 'center';
-        const length = ctx.measureText(label).width;
-        ctx.fillStyle = '#fffffff0';
-        ctx.fillRect(country.x - length / 2 - 5, country.y - country.radius - 26, length + 10, 20);
-        ctx.fillStyle = '#626977';
-        ctx.fillText(label, country.x, country.y - country.radius - 11);
-      }
-    }
-    markers = visible;
-    ctx.restore();
-  }
   function renderFrame(time = 0) {
     handle = null;
     if (!state || suspended) return;
@@ -715,12 +545,10 @@ export function createRenderer(
     if (!instant()) {
       clock += delta;
       age += delta;
-      rotationHold = Math.max(0, rotationHold - delta);
       const easing = 1 - Math.exp((-delta * 5) / Math.max(0.1, config.animation.cameraSeconds));
       for (const key of ['x', 'y', 'zoom'])
         camera[key] += (cameraTarget[key] - camera[key]) * easing;
       graphMix += (graphTarget - graphMix) * easing;
-      worldMix += (worldTarget - worldMix) * easing;
       for (const point of points) {
         point.lifetime += delta;
         const travel = clamp(
@@ -732,20 +560,13 @@ export function createRenderer(
           (point.progress * travel - point.currentProgress) * (1 - Math.exp(-delta * 9));
         point.currentLane += (point.lane - point.currentLane) * (1 - Math.exp(-delta * 7));
       }
-      if (scene.kind === 'world') {
-        const momentum = globeMotion.step(delta),
-          motion = globeMotion.getSnapshot();
-        if (!motion.dragging && !momentum && !rotationHold && !hovered && !state.journalistId)
-          rotation[0] += delta * config.animation.globeSpeed;
-      }
     }
     ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = '#fcfcfa';
+    ctx.fillStyle = '#f8fafb';
     ctx.fillRect(0, 0, width, height);
     annotations = [];
-    journalists = [];
-    drawCity(1 - worldMix);
-    drawWorld(worldMix);
+    countryPoints = [];
+    drawCity(1);
     if (!instant()) handle = requestFrame(renderFrame);
   }
   function wake() {
@@ -760,85 +581,11 @@ export function createRenderer(
     renderFrame,
     setSuspended(value) {
       suspended = value;
-      if (value) globeMotion.stop();
       if (value && handle !== null) {
         cancelFrame(handle);
         handle = null;
       }
       if (!value) wake();
-    },
-    hitCountry(x, y) {
-      return scene?.kind === 'world'
-        ? markers
-            .filter((marker) => Math.hypot(marker.x - x, marker.y - y) <= marker.radius + 8)
-            .sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y))[0] || null
-        : null;
-    },
-    clientToScene(clientX, clientY) {
-      const bounds = canvas.getBoundingClientRect();
-      return {
-        x: ((clientX - bounds.left) * width) / (bounds.width || width),
-        y: ((clientY - bounds.top) * height) / (bounds.height || height),
-      };
-    },
-    hitJournalist(x, y, touch = false) {
-      return scene?.kind === 'city' && scene.country && worldMix < 0.5 && graphMix > 0.5
-        ? journalists
-            .filter(
-              (point) => Math.hypot(point.x - x, point.y - y) <= point.radius + (touch ? 5 : 2.5),
-            )
-            .sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y))[0] || null
-        : null;
-    },
-    hoverCountry(id) {
-      if (id !== hovered) {
-        hovered = id;
-        wake();
-      }
-    },
-    beginRotation(time) {
-      if (scene?.kind !== 'world') return;
-      globeMotion.begin(time);
-      hovered = null;
-      rotationHold = 8;
-      wake();
-    },
-    dragRotation(dx, dy, time) {
-      if (scene?.kind !== 'world') return;
-      globeMotion.drag(dx, dy, time);
-      rotationHold = 8;
-      wake();
-    },
-    endRotation(time) {
-      if (instant()) globeMotion.stop();
-      else globeMotion.end(time);
-      rotationHold = 8;
-      wake();
-    },
-    cancelRotation() {
-      globeMotion.stop();
-      wake();
-    },
-    rotate(dx, dy) {
-      globeMotion.stop();
-      rotation[0] += dx * config.globeMotion.sensitivityX;
-      rotation[1] = clamp(
-        rotation[1] - dy * config.globeMotion.sensitivityY,
-        -config.globeMotion.latitudeLimit,
-        config.globeMotion.latitudeLimit,
-      );
-      rotationHold = 8;
-      wake();
-    },
-    centerCountry(id) {
-      const country = countries.find((item) => item.id === id);
-      if (country) {
-        globeMotion.stop();
-        rotation[0] = -country.longitude;
-        rotation[1] = -clamp(country.latitude, -60, 60);
-        rotationHold = 8;
-        wake();
-      }
     },
     invalidateCallouts() {
       calloutLayout = null;
@@ -847,30 +594,17 @@ export function createRenderer(
     getSnapshot: () => ({
       kind: scene?.kind,
       phase: scene?.phase,
-      pointCount:
-        scene?.kind === 'world' ? data.records.length : scene?.kind === 'intro' ? 0 : points.length,
+      pointCount: scene?.kind === 'intro' ? 0 : points.length,
       visiblePointCount:
-        scene?.kind === 'world'
-          ? markers.reduce((sum, marker) => sum + marker.count, 0)
-          : scene?.kind === 'intro'
-            ? 0
-            : points.filter((point) => inFocus(point.record)).length,
+        scene?.kind === 'intro' ? 0 : points.filter((point) => inFocus(point.record)).length,
       countryId: scene?.country?.id || null,
-      markers: markers.map((marker) => ({
-        id: marker.id,
-        count: marker.count,
-        x: marker.x,
-        y: marker.y,
-      })),
-      journalists: journalists.map((point) => ({
+      points: countryPoints.map((point) => ({
         id: point.record.id,
         countryId: point.countryId,
         x: point.x,
         y: point.y,
       })),
       annotations,
-      rotation: [...rotation],
-      motion: globeMotion.getSnapshot(),
     }),
     destroy() {
       suspended = true;

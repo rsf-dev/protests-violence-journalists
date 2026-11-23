@@ -1,3 +1,4 @@
+import { enhancePresentation } from './presentation.js';
 import { createConfig } from './config.js';
 import {
   validateDataset,
@@ -7,10 +8,9 @@ import {
   groupCountries,
   deriveScene,
   worldStats,
-  journalistDetails,
 } from './core/model.js';
-import { createRenderer } from './graphics/scene.js';
-import { countryHref, pageHref, readRoute, createPageController } from './core/routing.js';
+import { createRenderer } from './graphics/world-map.js';
+import { pageHref, readRoute, createPageController } from './core/routing.js';
 import { resourceURL } from './core/resources.js';
 import { DATA_LIMITS, fetchJSON, validateAtlas } from './core/security.js';
 
@@ -32,11 +32,7 @@ let controller,
   renderer,
   data,
   countries,
-  scrollFrame = null,
-  dragging = null,
-  pendingActivation = null,
-  lastJournalistId = null,
-  popoverAnchor = null;
+  scrollFrame = null;
 let explorerOpen =
   page === 'world' ? CONFIG.ui.worldPanelOpen : page === 'country' && CONFIG.ui.countryPanelOpen;
 
@@ -76,10 +72,6 @@ async function finishLoading() {
   if (!reducedMotion.matches) await delay(400);
   $('#loading').hidden = true;
 }
-function openCountry(id) {
-  if (countries.some((country) => country.id === id))
-    window.location.assign(new URL(countryHref(id, CONFIG.language), document.baseURI).href);
-}
 function setPage(view) {
   const sameAddress = view === 'world' && page === 'scrolly';
   page = view;
@@ -118,53 +110,6 @@ function setExplorerOpen(open, focus = false) {
   if (focus) $(open ? '#explorer-close' : '#explorer-toggle').focus({ preventScroll: true });
   updateLayout();
 }
-function renderCountryList() {
-  const list = $('#country-list');
-  list.replaceChildren();
-  const legend = $('#country-chart-legend');
-  legend.replaceChildren();
-  for (const author of CONFIG.authors) {
-    const item = document.createElement('span'),
-      marker = document.createElement('i');
-    marker.className = 'author-marker';
-    marker.style.backgroundColor = author.color;
-    marker.setAttribute('aria-hidden', 'true');
-    item.append(marker, document.createTextNode(author.label));
-    legend.append(item);
-  }
-  const maximum = Math.max(...countries.map((country) => country.count));
-  for (const country of countries) {
-    const link = document.createElement('a');
-    link.href = countryHref(country.id, CONFIG.language);
-    link.className = 'country-choice';
-    link.dataset.country = country.id;
-    const counts = country.summary.authors;
-    link.setAttribute(
-      'aria-label',
-      t('chart.countryLabel', {
-        country: country.label,
-        count: country.count,
-        breakdown: authorSummary(counts),
-      }),
-    );
-    const name = document.createElement('span');
-    name.textContent = country.label;
-    const total = document.createElement('strong');
-    total.textContent = country.count;
-    link.append(name, total, authorBar(counts, country.count, maximum));
-    list.append(link);
-  }
-  const select = $('#journalist-select');
-  for (const record of data.records.filter(
-    (record) => page === 'country' && record.countryCode === document.body.dataset.country,
-  )) {
-    const option = document.createElement('option');
-    option.value = record.id;
-    option.textContent =
-      i18n.recordTitle(record) + ' · ' + (i18n.mediaName(record.media) || record.id);
-    select.append(option);
-  }
-}
 function authorSummary(counts) {
   return CONFIG.authors
     .filter((author) => counts[author.id])
@@ -198,48 +143,6 @@ function authorBar(counts, total, maximum = total) {
   }
   return graph;
 }
-function showJournalist(id, anchor = null) {
-  popoverAnchor = anchor || { x: window.innerWidth * 0.66, y: window.innerHeight * 0.38 };
-  controller.selectJournalist(id);
-  $('#tooltip').hidden = true;
-}
-function renderJournalistPopover(state) {
-  const record = data.records.find((item) => item.id === state.journalistId),
-    popover = $('#journalist-popover');
-  popover.hidden = !record;
-  $('#journalist-select').value = record?.id || '';
-  if (!record) {
-    lastJournalistId = null;
-    return;
-  }
-  const changed = lastJournalistId !== record.id;
-  lastJournalistId = record.id;
-  $('#journalist-title').textContent = i18n.recordTitle(record);
-  const fields = $('#journalist-details');
-  fields.replaceChildren();
-  for (const field of journalistDetails(record, CONFIG)) {
-    const name = document.createElement('dt'),
-      value = document.createElement('dd');
-    name.textContent = field.label;
-    if (field.href) {
-      const link = document.createElement('a');
-      link.href = field.href;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
-      link.textContent = t('record.viewSource');
-      link.title = field.href;
-      value.append(link);
-    } else value.textContent = field.value;
-    fields.append(name, value);
-  }
-  const anchor = popoverAnchor || { x: window.innerWidth * 0.66, y: window.innerHeight * 0.38 };
-  const width = Math.min(360, window.innerWidth - 32),
-    height = Math.min(500, window.innerHeight * 0.65);
-  popover.style.left = Math.max(16, Math.min(window.innerWidth - width - 16, anchor.x + 14)) + 'px';
-  popover.style.top =
-    Math.max(16, Math.min(window.innerHeight - height - 70, anchor.y - 24)) + 'px';
-  if (changed) $('#close-journalist').focus({ preventScroll: true });
-}
 function updateUI(state) {
   const scene = deriveScene(state, data, CONFIG),
     world = scene.kind === 'world';
@@ -254,8 +157,8 @@ function updateUI(state) {
     country,
   });
   $('#return-map-button').hidden = !(state.inExplore && scene.country);
-  $('#globe-hint').hidden = !(world || scene.country);
-  $('#globe-hint').textContent = t(world ? 'scene.globeHint' : 'scene.countryHint');
+  $('#map-hint').hidden = !(world || scene.country);
+  $('#map-hint').textContent = t(world ? 'scene.mapHint' : 'scene.countryHint');
   $('#scene').tabIndex = state.inExplore ? 0 : -1;
   $('#scene').setAttribute(
     'aria-label',
@@ -268,7 +171,7 @@ function updateUI(state) {
             count: scene.records.length,
             police: scene.summary.police,
             other: scene.summary.other,
-          }) + (scene.country ? ' ' + t('scene.recordHint') : ''),
+          }),
   );
   stepElements.forEach((element, index) =>
     element.classList.toggle('is-active', !state.inExplore && index === state.slide),
@@ -345,7 +248,6 @@ function updateUI(state) {
     (scene.country ? country + ' — ' : world ? t('page.worldPrefix') : '') +
     t('page.title', { year: data.metadata.year || CONFIG.year });
   renderer.setState(state, reducedMotion.matches);
-  renderJournalistPopover(state);
   updateLayout();
 }
 function updateScroll() {
@@ -388,133 +290,17 @@ function wireEvents() {
   document.addEventListener('visibilitychange', () => renderer.setSuspended(document.hidden));
   $('#explorer-toggle').addEventListener('click', () => setExplorerOpen(!explorerOpen, true));
   $('#explorer-close').addEventListener('click', () => setExplorerOpen(false, true));
-  $('#close-journalist').addEventListener('click', () => {
-    controller.closeJournalist();
-    $('#scene').focus({ preventScroll: true });
-  });
-  $('#journalist-select').addEventListener('change', (event) => {
-    if (event.target.value) showJournalist(event.target.value);
-  });
-  document.addEventListener('pointerdown', (event) => {
-    if (
-      controller.getState().journalistId &&
-      !$('#journalist-popover').contains(event.target) &&
-      event.target !== $('#journalist-select')
-    )
-      controller.closeJournalist();
-  });
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
-    if (controller.getState().journalistId) {
-      event.preventDefault();
-      controller.closeJournalist();
-      $('#scene').focus({ preventScroll: true });
-    } else if (page !== 'scrolly' && explorerOpen) {
+    if (page !== 'scrolly' && explorerOpen) {
       event.preventDefault();
       setExplorerOpen(false, true);
     }
   });
-  const canvas = $('#scene');
-  canvas.addEventListener('keydown', (event) => {
-    if (!controller.getState().inExplore || renderer.getSnapshot().kind !== 'world') return;
-    const movement = {
-      ArrowLeft: [-45, 0],
-      ArrowRight: [45, 0],
-      ArrowUp: [0, -35],
-      ArrowDown: [0, 35],
-    }[event.key];
-    if (movement) {
-      event.preventDefault();
-      renderer.rotate(...movement);
-    }
-  });
-  canvas.addEventListener('pointerdown', (event) => {
-    pendingActivation = null;
-    const snapshot = renderer.getSnapshot();
-    if (snapshot.kind !== 'world' && !snapshot.countryId) return;
-    if (snapshot.kind === 'world') renderer.beginRotation(event.timeStamp);
-    const point = renderer.clientToScene(event.clientX, event.clientY);
-    dragging = {
-      startX: event.clientX,
-      startY: event.clientY,
-      x: event.clientX,
-      y: event.clientY,
-      moved: false,
-      journalistId: renderer.hitJournalist(point.x, point.y, event.pointerType === 'touch')?.record
-        .id,
-      countryId: renderer.hitCountry(point.x, point.y)?.id,
-    };
-    canvas.setPointerCapture?.(event.pointerId);
-  });
-  canvas.addEventListener('pointermove', (event) => {
-    if (dragging) {
-      if (Math.hypot(event.clientX - dragging.startX, event.clientY - dragging.startY) > 5)
-        dragging.moved = true;
-      if (dragging.moved && renderer.getSnapshot().kind === 'world')
-        renderer.dragRotation(
-          event.clientX - dragging.x,
-          event.clientY - dragging.y,
-          event.timeStamp,
-        );
-      dragging.x = event.clientX;
-      dragging.y = event.clientY;
-      $('#tooltip').hidden = true;
-      return;
-    }
-    if (controller.getState().journalistId) return;
-    const point = renderer.clientToScene(event.clientX, event.clientY);
-    const country = renderer.hitCountry(point.x, point.y),
-      person = renderer.hitJournalist(point.x, point.y),
-      tooltip = $('#tooltip');
-    renderer.hoverCountry(country?.id || null);
-    canvas.style.cursor =
-      country || person ? 'pointer' : renderer.getSnapshot().kind === 'world' ? 'grab' : '';
-    if (!country || event.pointerType === 'touch') {
-      tooltip.hidden = true;
-      return;
-    }
-    tooltip.replaceChildren();
-    for (const [tag, key, values] of [
-      ['strong', 'tooltip.title', { country: country.label, count: country.count }],
-      ['small', 'tooltip.counts', { breakdown: authorSummary(country.summary.authors) }],
-      ['small', 'tooltip.action', {}],
-    ]) {
-      const element = document.createElement(tag);
-      element.textContent = t(key, values);
-      tooltip.append(element);
-    }
-    tooltip.style.left = Math.max(8, Math.min(window.innerWidth - 280, event.clientX + 16)) + 'px';
-    tooltip.style.top = Math.max(85, Math.min(window.innerHeight - 110, event.clientY - 70)) + 'px';
-    tooltip.hidden = false;
-  });
-  canvas.addEventListener('pointerup', (event) => {
-    if (dragging && renderer.getSnapshot().kind === 'world') renderer.endRotation(event.timeStamp);
-    pendingActivation =
-      dragging && !dragging.moved
-        ? { ...dragging, anchor: { x: event.clientX, y: event.clientY } }
-        : null;
-    dragging = null;
-  });
-  // Attendre le clic complet évite qu’un appui tactile referme la fiche qu’il vient d’ouvrir.
-  canvas.addEventListener('click', () => {
-    const activation = pendingActivation;
-    pendingActivation = null;
-    if (activation?.journalistId) showJournalist(activation.journalistId, activation.anchor);
-    else if (activation?.countryId) openCountry(activation.countryId);
-  });
-  canvas.addEventListener('pointercancel', () => {
-    dragging = null;
-    pendingActivation = null;
-    renderer.cancelRotation();
-  });
-  canvas.addEventListener('pointerleave', () => {
-    renderer.hoverCountry(null);
-    $('#tooltip').hidden = true;
-  });
 }
 async function init() {
   try {
-    if (!globalThis.d3 || !globalThis.topojson) throw new Error(t('error.libraries'));
+    if (!globalThis.topojson) throw new Error(t('error.libraries'));
     setLoadingProgress(10);
     let completedResources = 0;
     const trackResource = async (promise) => {
@@ -590,7 +376,7 @@ async function init() {
     for (const [name, color] of Object.entries(CONFIG.colors))
       document.documentElement.style.setProperty('--' + name, color);
     const world = atlas ? topojson.feature(atlas, atlas.objects.countries) : null;
-    renderer = createRenderer($('#scene'), { intro, graph }, data, CONFIG, { d3, world });
+    renderer = createRenderer($('#scene'), { intro, graph }, data, CONFIG, { world });
     resizeScene();
     setExplorerOpen(explorerOpen);
     for (const [selector, counts] of [
@@ -629,7 +415,6 @@ async function init() {
       });
       $('#story-progress').append(button);
     });
-    renderCountryList();
     controller.subscribe(updateUI);
     wireEvents();
     renderer.setState(controller.getState(), true);
@@ -638,14 +423,16 @@ async function init() {
     if (page === 'scrolly' && initialSlide >= 0)
       stepElements[initialSlide].scrollIntoView({ block: 'start', behavior: 'auto' });
     updateScroll();
+    await renderer.ready();
     setLoadingProgress(95, 'loading.preparing');
-    if (!atlas) $('#globe-hint').textContent = t('scene.noBorders');
+    if (!atlas) $('#map-hint').textContent = t('map.geometryError');
     document.fonts?.ready?.then(() => {
       renderer.invalidateCallouts();
       renderer.setState(controller.getState(), reducedMotion.matches);
       updateLayout();
     });
     window.newsCity = { controller, renderer, config: CONFIG };
+    enhancePresentation({ ...window.newsCity, data, countries });
     await finishLoading();
   } catch (error) {
     $('#loading').classList.add('error');

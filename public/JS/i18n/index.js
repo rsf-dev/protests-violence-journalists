@@ -47,11 +47,6 @@ export function createI18n(language = REGLAGES.defaultLanguage) {
   }
   const countryName = (id, fallback = id) => messages['country.' + id] || fallback;
   const cityName = (city) => messages['city.' + city] || city;
-  function recordTitle(record) {
-    return !record.journalistLabel || record.journalistLabel.trim().toLowerCase() === 'inconnu'
-      ? t('record.unnamed', { id: record.id })
-      : record.journalistLabel;
-  }
   const dateLabel = (value) =>
     !value
       ? value
@@ -73,7 +68,6 @@ export function createI18n(language = REGLAGES.defaultLanguage) {
     apply,
     countryName,
     cityName,
-    recordTitle,
     dateLabel,
     regionName,
     mediaName,

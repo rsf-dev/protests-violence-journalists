@@ -1,13 +1,37 @@
 {
-  "version": "8d6f03ce216738e3",
+  "version": "67a2bc1c5e4a8580",
   "dependencies": [
     {
-      "file": "vendor/d3.min.js",
-      "name": "D3",
-      "version": "7.9.0",
-      "source": "https://github.com/d3/d3/tree/v7.9.0",
-      "sha256": "f2094bbf6141b359722c4fe454eb6c4b0f0e42cc10cc7af921fc158fceb86539",
-      "integrity": "sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i"
+      "file": "vendor/maplibre-gl.mjs",
+      "name": "MapLibre GL JS",
+      "version": "6.19.0",
+      "source": "https://github.com/maplibre/maplibre-gl-js/tree/v6.19.0",
+      "sha256": "01590c9875ea5bb0e8cdc534479f607f7d1695ca5debbccaf730edf5fa5f39e5",
+      "integrity": "sha384-xwIwS2ZrVZdy1v8I+MtCDAkB+tCwelpTdNz9yPRN03mYLaG5HTwyhOnylbOgukuC"
+    },
+    {
+      "file": "vendor/maplibre-gl-worker.mjs",
+      "name": "MapLibre GL JS worker",
+      "version": "6.19.0",
+      "source": "https://github.com/maplibre/maplibre-gl-js/tree/v6.19.0",
+      "sha256": "c8564c4a4147326a587c9cc4c2a871c4b02a6c37c3f1ea51da55be3220d4b112",
+      "integrity": "sha384-E8aY1WBd+z+8ZBL1QMJn5vLopbA5jLXMO0KIHrPsXtYOgv5R8WZX8O0YTlvx57vN"
+    },
+    {
+      "file": "vendor/maplibre-gl.css",
+      "name": "MapLibre GL JS styles",
+      "version": "6.19.0",
+      "source": "https://github.com/maplibre/maplibre-gl-js/tree/v6.19.0",
+      "sha256": "a90798a1953017790e590f7e1bd35ff103a8a4263972cb47290b78adf86f8c20",
+      "integrity": "sha384-S+OnE5M4U3Qc2nR0RgljGrVs06xqfRg8L7uFk/pOF5+sRuSDG4oKkqKZmFrx7w09"
+    },
+    {
+      "file": "world-50m.json",
+      "name": "World Atlas 50m",
+      "version": "2.0.2",
+      "source": "https://github.com/topojson/world-atlas/tree/v2.0.2",
+      "sha256": "04342cdc1e3016bcd7db1630de95684d67b79fe3c8c460321e87aef469502394",
+      "integrity": "sha384-Aw4s9pX1PTPntIYkZ/qV9IYiF5Gv8eTl6Dd/TT56zfO1Wwd+owFwYUuuXNUMrWkc"
     },
     {
       "file": "vendor/topojson-client.min.js",
@@ -16,14 +40,6 @@
       "source": "https://github.com/topojson/topojson-client/tree/v3.1.0",
       "sha256": "25cd02ae486cc5063e0215a4e4cfb15de83700c87ac48bac4d57dc6aaf3ebb89",
       "integrity": "sha384-Ukv1p/xTma6P4/2bY5KzWBw+ydSpXmhCMtyciIQVDJ1RmOxtCYNMF1uXT9T63H67"
-    },
-    {
-      "file": "world-110m.json",
-      "name": "World Atlas",
-      "version": "2.0.2",
-      "source": "https://github.com/topojson/world-atlas/tree/v2.0.2",
-      "sha256": "2516c915867c7baf18ddec727aec46c315541a07cfb3d79a6559b05d5e94eee8",
-      "integrity": "sha384-yOCJ+8ShBm8UDqtAVtAvxTDDf4gXo5edxl/YG0FmVC5OTmqVLl7utuVGBDEeZWHf"
     },
     {
       "file": "assets/fonts/Electrolize-Regular.ttf",

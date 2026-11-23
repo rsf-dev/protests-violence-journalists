@@ -1,7 +1,3 @@
-D3.js v7.9.0
-Copyright 2010-2023 Mike Bostock
-https://github.com/d3/d3
-
 TopoJSON Client v3.1.0
 Copyright 2012-2019 Mike Bostock
 https://github.com/topojson/topojson-client
