@@ -1,0 +1,38 @@
+/* Comparaison directe : le dernier parcours reste en arrière-plan, sans carte mondiale. */
+body[data-page='comparison'] .visual-stage {
+  filter: blur(2px);
+  opacity: 0.45;
+}
+body[data-page='comparison'] .explorer-toggle {
+  display: none;
+}
+body[data-page='comparison'] .explorer {
+  font-family: Electrolize, Arial, sans-serif;
+}
+body[data-page='comparison'] .explorer-heading {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--rsf-border);
+}
+body[data-page='comparison'] .explorer-heading h2 {
+  padding-right: 65px;
+  font:
+    900 0.9rem Electrolize,
+    Arial,
+    sans-serif;
+  letter-spacing: 0;
+}
+body[data-page='comparison'] .panel-close:is(:hover, :focus-visible) {
+  background: var(--rsf-text);
+  border-color: var(--rsf-text);
+  color: var(--rsf-surface);
+}
+.country-choice .chart-bar-value {
+  opacity: 1;
+}
+/* Les actions restent accessibles lorsque le panneau recouvre presque tout le mobile. */
+body:is([data-page='comparison'], [data-page='country']) .page-footer {
+  z-index: 13;
+}
+body:is([data-page='comparison'], [data-page='country']) .explorer-panel {
+  padding-bottom: calc(var(--footer-height) + 24px);
+}
