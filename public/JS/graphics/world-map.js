@@ -3,6 +3,7 @@ import { groupCountries } from '../core/model.js';
 import { countryHref } from '../core/routing.js';
 import { resourceURL } from '../core/resources.js';
 import { createI18n } from '../i18n/index.js';
+import { basemapStyle, createBasemapControl, secureMapRequest } from './basemaps.js';
 
 export const MAP_CLASSES = [
   { minimum: 1, maximum: 4, color: '#f7d457' },
@@ -139,15 +140,50 @@ export function createRenderer(canvas, images, data, config, options) {
   let map = null;
   let mapReady = null;
   let author = 'all';
+  let allowedCountries = null;
   let hovered = null;
   let features = null;
   let loaded = false;
   let destroyed = false;
   let maplibre = null;
   let popup = null;
+  let basemap = config.map.basemaps.find((entry) => entry.id === config.map.defaultBasemap);
+  let basemapControl = null;
+  let choroplethEnabled = true;
+  let sourceReadyHandler = null;
+  function syncTheme() {
+    document.body.classList.toggle('map-theme-dark', visible && basemap.theme === 'dark');
+    document.body.dataset.basemap = basemap.id;
+    document.body.dataset.mapTheme = visible ? basemap.theme : 'light';
+  }
+  function setBasemap(id) {
+    const next = config.map.basemaps.find((entry) => entry.id === id);
+    if (!next || next.id === basemap.id) return;
+    basemap = next;
+    loaded = false;
+    if (sourceReadyHandler) map?.off('sourcedata', sourceReadyHandler);
+    sourceReadyHandler = null;
+    popup?.remove();
+    hovered = null;
+    status.textContent = t('map.loading');
+    status.hidden = !visible;
+    syncTheme();
+    basemapControl?.sync(id);
+    map?.setStyle(basemapStyle(basemap));
+  }
+  function setChoroplethEnabled(enabled) {
+    choroplethEnabled = Boolean(enabled);
+    for (const id of ['rsf-countries-fill', 'rsf-countries-outline']) {
+      if (map?.getLayer(id))
+        map.setLayoutProperty(id, 'visibility', choroplethEnabled ? 'visible' : 'none');
+    }
+    legend.hidden = !visible || !choroplethEnabled;
+    popup?.remove();
+  }
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
   function selectedCount(country) {
+    if (allowedCountries && !allowedCountries.has(country.id)) return 0;
     return author === 'all' ? country.count : country.summary.authors[author] || 0;
   }
   function updateLegend() {
@@ -173,7 +209,7 @@ export function createRenderer(canvas, images, data, config, options) {
     }
     const empty = document.createElement('p');
     const marker = document.createElement('i');
-    marker.style.backgroundColor = '#e1e5e9';
+    marker.style.backgroundColor = '#7890a0';
     empty.append(marker, document.createTextNode(t('map.noData')));
     legend.append(title, selection, scale, empty);
   }
@@ -206,11 +242,11 @@ export function createRenderer(canvas, images, data, config, options) {
     }
     map = new maplibre.Map({
       container,
-      style: resourceURL('assets/maps/openfreemap-positron.json'),
-      center: [8, 22],
-      zoom: innerWidth < 760 ? 0.1 : 1.15,
-      minZoom: 0,
-      maxZoom: 6,
+      style: basemapStyle(basemap),
+      center: config.map.center,
+      zoom: innerWidth < 760 ? config.map.mobileZoom : config.map.zoom,
+      minZoom: config.map.minZoom,
+      maxZoom: config.map.maxZoom,
       maxPitch: 0,
       bearing: 0,
       renderWorldCopies: false,
@@ -218,13 +254,7 @@ export function createRenderer(canvas, images, data, config, options) {
       touchPitch: false,
       pitchWithRotate: false,
       attributionControl: false,
-      transformRequest(url) {
-        const target = new URL(url, document.baseURI);
-        if (![location.origin, 'https://tiles.openfreemap.org'].includes(target.origin)) {
-          throw new Error('Map resource outside allowed origins');
-        }
-        return { url: target.href, credentials: 'omit' };
-      },
+      transformRequest: (url) => secureMapRequest(url),
       canvasContextAttributes: { preserveDrawingBuffer: true },
       locale: {
         'NavigationControl.ZoomIn': t('map.zoomIn'),
@@ -234,19 +264,14 @@ export function createRenderer(canvas, images, data, config, options) {
     map.touchZoomRotate.disableRotation();
     map.getCanvas().setAttribute('aria-label', t('map.accessible'));
     map.addControl(new maplibre.NavigationControl({ showCompass: false }), 'top-left');
-    const reset = document.createElement('button');
-    reset.type = 'button';
-    reset.className = 'map-reset';
-    reset.textContent = t('map.reset');
-    reset.addEventListener('click', () =>
-      map.easeTo({
-        center: [8, 22],
-        zoom: innerWidth < 760 ? 0.1 : 1.15,
-        duration: reducedMotion.matches ? 0 : 450,
-      }),
-    );
-    container.append(reset);
-    map.addControl(new maplibre.AttributionControl({ compact: true }), 'bottom-left');
+    map.addControl(new maplibre.AttributionControl({ compact: true }), 'bottom-right');
+    basemapControl = createBasemapControl({
+      entries: config.map.basemaps,
+      selected: basemap.id,
+      t,
+      onSelect: setBasemap,
+    });
+    map.addControl(basemapControl, 'bottom-right');
     popup = new maplibre.Popup({
       closeButton: false,
       closeOnClick: false,
@@ -255,7 +280,7 @@ export function createRenderer(canvas, images, data, config, options) {
     });
     await new Promise((resolve, reject) => {
       const timeout = setTimeout(() => reject(new Error(t('map.loadError'))), 30000);
-      map.once('style.load', () => {
+      map.on('style.load', () => {
         const layers = map.getStyle().layers;
         const english = createI18n('en');
         const labels = new Map(
@@ -286,6 +311,10 @@ export function createRenderer(canvas, images, data, config, options) {
           ]);
         }
         const firstLabel = layers.find((layer) => layer.type === 'symbol')?.id;
+        if (sourceReadyHandler) map.off('sourcedata', sourceReadyHandler);
+        if (map.getLayer('rsf-countries-outline')) map.removeLayer('rsf-countries-outline');
+        if (map.getLayer('rsf-countries-fill')) map.removeLayer('rsf-countries-fill');
+        if (map.getSource('rsf-countries')) map.removeSource('rsf-countries');
         map.addSource('rsf-countries', { type: 'geojson', data: features });
         map.addLayer(
           {
@@ -309,9 +338,9 @@ export function createRenderer(canvas, images, data, config, options) {
                   50,
                   '#76001f',
                 ],
-                '#e1e5e9',
+                '#7890a0',
               ],
-              'fill-opacity': ['case', ['>', ['get', 'cases'], 0], 0.9, 0.48],
+              'fill-opacity': ['case', ['>', ['get', 'cases'], 0], 0.9, 0.42],
             },
           },
           firstLabel,
@@ -333,6 +362,7 @@ export function createRenderer(canvas, images, data, config, options) {
           },
           firstLabel,
         );
+        setChoroplethEnabled(choroplethEnabled);
         const done = () => {
           if (!map.isSourceLoaded('rsf-countries')) return;
           map.off('sourcedata', done);
@@ -341,17 +371,19 @@ export function createRenderer(canvas, images, data, config, options) {
           status.hidden = true;
           resolve();
         };
+        sourceReadyHandler = done;
         map.on('sourcedata', done);
         done();
       });
       map.on('error', (event) => {
         // Les polygones et leurs effectifs restent locaux si le fond distant tarde.
-        console.warn('OpenFreeMap:', event.error?.message || event.message);
+        console.warn('Basemap:', event.error?.message || event.message);
       });
     });
     map.on('mousemove', 'rsf-countries-fill', (event) => {
       const feature = event.features?.[0];
-      const country = byId.get(feature?.properties.code);
+      const match = byId.get(feature?.properties.code);
+      const country = match && selectedCount(match) > 0 ? match : null;
       hoverCountry(country?.id || null);
       map.getCanvas().style.cursor = country ? 'pointer' : '';
       if (!country || event.originalEvent?.pointerType === 'touch') {
@@ -373,7 +405,7 @@ export function createRenderer(canvas, images, data, config, options) {
     });
     map.on('click', 'rsf-countries-fill', (event) => {
       const code = event.features?.[0]?.properties.code;
-      if (byId.has(code))
+      if (byId.has(code) && selectedCount(byId.get(code)) > 0)
         location.assign(new URL(countryHref(code, config.language), document.baseURI));
     });
     map.on('dragstart', () => popup.remove());
@@ -385,7 +417,8 @@ export function createRenderer(canvas, images, data, config, options) {
     setState(next, reduced) {
       visible = next.inExplore && next.view === 'world';
       container.hidden = !visible;
-      legend.hidden = !visible;
+      legend.hidden = !visible || !choroplethEnabled;
+      syncTheme();
       status.hidden = !visible || loaded;
       canvas.hidden = visible;
       document.body.classList.toggle('has-choropleth', visible);
@@ -423,9 +456,32 @@ export function createRenderer(canvas, images, data, config, options) {
     },
     setAuthorFilter(id) {
       if (id !== 'all' && !config.authors.some((item) => item.id === id)) return;
+      if (author === id) return;
       author = id;
       popup?.remove();
       updateSource();
+    },
+    setCountryFilter(ids) {
+      const next = new Set(ids.filter((id) => byId.has(id)));
+      if (
+        allowedCountries &&
+        next.size === allowedCountries.size &&
+        [...next].every((id) => allowedCountries.has(id))
+      )
+        return;
+      allowedCountries = next;
+      popup?.remove();
+      hoverCountry(null);
+      updateSource();
+    },
+    setBasemap,
+    setChoroplethEnabled,
+    resetWorld() {
+      map?.easeTo({
+        center: config.map.center,
+        zoom: innerWidth < 760 ? config.map.mobileZoom : config.map.zoom,
+        duration: reducedMotion.matches ? 0 : 450,
+      });
     },
     ready: () => (visible ? mapReady : Promise.resolve()),
     getMap: () => map,
@@ -434,14 +490,16 @@ export function createRenderer(canvas, images, data, config, options) {
       return {
         kind: 'world',
         phase: 'world',
-        choropleth: true,
+        choropleth: choroplethEnabled,
+        basemap: basemap.id,
+        theme: basemap.theme,
         loaded,
         authorFilter: author,
         pointCount: data.records.length,
         visiblePointCount: 0,
         markers: [],
         points: [],
-        annotations: [],
+        floatingLabels: 0,
         countryId: null,
         zoom: map?.getZoom() || 0,
         center: map ? map.getCenter().toArray() : [8, 22],

@@ -1,4 +1,29 @@
 export default {
+  'legend.title': 'Légende',
+  'map.basemaps': 'Fond de carte',
+  'map.choropleth': 'Mode choroplèthe',
+  'basemap.light': 'Clair',
+  'basemap.dark': 'Sombre',
+  'basemap.fiord': 'Fiord',
+  'basemap.liberty': 'Liberty',
+  'basemap.bright': 'Bright',
+  'basemap.satellite': 'Satellite',
+  'basemap.relief': 'Relief',
+
+  'map.controls': 'Filtres et synthèse de la carte',
+  'map.countryFilter': 'Filtrer par pays',
+  'map.regionFilter': 'Filtrer par région',
+  'map.allCountries': 'Tous les pays',
+  'map.allRegions': 'Toutes les régions',
+  'map.clearFilters': 'Supprimer les filtres',
+  'map.selectionSummary': '{cases} cas · {countries} pays',
+  'map.collapseControls': 'Replier la légende et les filtres',
+  'map.expandControls': 'Déplier la légende et les filtres',
+  'menu.open': 'Ouvrir le menu',
+  'menu.close': 'Fermer le menu',
+  'menu.statistics': 'Statistiques pays',
+  'menu.legend': 'Légende et filtres',
+
   'map.accessible':
     'Carte mondiale interactive. Les couleurs représentent le nombre de cas recensés. Déplacez et zoomez la carte, ou choisissez un pays dans la liste.',
   'map.legend': 'Nombre de cas recensés',
@@ -19,15 +44,14 @@ export default {
   'stats.tab.police': 'Autorités',
   'ux.worldTitle': 'Comparer les pays',
   'ux.worldDescription': 'Répartition des cas par pays et par auteur.',
-  'ux.search': 'Rechercher un pays',
   'ux.sortCount': 'Nombre de cas',
   'ux.sortName': 'Nom du pays',
-  'ux.noResults': 'Aucun pays ne correspond à la recherche.',
   noscript: 'Activez JavaScript pour lire ce récit interactif.',
   'error.dataLimit': 'Le fichier de données dépasse la taille autorisée.',
   'error.dataLoad': 'Le chargement des données a échoué ou dépassé le délai autorisé.',
   'error.dataShape': 'La structure du fichier de données est invalide.',
-  'page.title': 'Les violences contre les journalistes en manifestation en {year}',
+  'page.title':
+    'Violences commises dans le monde en {year} contre les journalistes couvrant les manifestations',
   'page.description':
     'Récit interactif et carte du monde des cas de violences contre les journalistes en manifestation, à partir des données fournies.',
   'page.worldPrefix': 'Données mondiales — ',
@@ -37,21 +61,21 @@ export default {
   'story.intro.title': 'Ceci est News City',
   'story.intro.description': "Une ville fictive où se déroule aujourd'hui une manifestation.",
   'story.neutral.title':
-    "À News City, 100 journalistes vont subir des violences en couvrant la manifestation d'aujourd'hui.",
+    'À News City, 100 journalistes vont subir des violences en couvrant la manifestation.',
   'story.neutral.description':
-    'Cette représentation fictive représente la répartition des {cases} cas recensés en {year}, quelles violences ont-ils subies et par qui, en pourcentage.',
-  'story.police.title': 'Sur {typical} journalistes représentant les cas recensés,',
+    'Cette carte représente la répartition moyenne des {cases} cas d’entraves et violences contre des journalistes en manifestation dans le monde en {year}.',
+  'story.police.title': 'En {year}, sur {typical} journalistes en moyenne,',
   'story.police.police':
-    '{police} représentent des cas attribués aux forces de l’ordre et autorités.',
-  'story.police.other':
-    'Les {other} autres représentent des cas attribués aux manifestants ou à des tiers inconnus.',
-  'story.policeTypes.title':
-    'Pour les cas attribués aux forces de l’ordre et autorités, les violences se répartissent ainsi :',
-  'story.otherTypes.title':
-    'Pour les cas attribués aux manifestants ou à des tiers inconnus, les violences se répartissent ainsi :',
+    '{police} subissent des violences imputables aux forces de l’ordre et aux autorités.',
+  'story.police.other': '{other} par des manifestants ou des tiers inconnus.',
+  'story.policeTypes.title': 'Pour les cas attribués aux {policeAuthor},',
+  'story.policeTypes.actor': 'forces de l’ordre et autorités',
+  'story.otherTypes.title': 'Pour les cas attribués aux {otherAuthor},',
+  'story.otherTypes.actor': 'manifestants ou à des tiers inconnus',
+  'story.types.description': 'les violences se répartissent ainsi :',
   'story.overview.title': 'Aller plus loin',
   'story.overview.description':
-    'En {year}, RSF recense {cases} violences contre des journalistes en manifestation réparties dans {countries} pays.',
+    'En {year}, RSF recense dans le monde {cases} violences contre des journalistes en manifestation réparties dans {countries} pays.',
   'story.worldAction': 'Voir les données mondiales',
   'nav.progress': 'Parcourir le récit',
   'nav.label': 'Navigation',

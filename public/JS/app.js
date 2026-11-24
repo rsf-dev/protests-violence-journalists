@@ -1,3 +1,4 @@
+import { createRouteLegend } from './ui/route-legend.js';
 import { enhancePresentation } from './presentation.js';
 import { createConfig } from './config.js';
 import {
@@ -33,6 +34,7 @@ let controller,
   data,
   countries,
   scrollFrame = null;
+let presentation = null;
 let explorerOpen =
   page === 'world' ? CONFIG.ui.worldPanelOpen : page === 'country' && CONFIG.ui.countryPanelOpen;
 
@@ -107,7 +109,11 @@ function setExplorerOpen(open, focus = false) {
   $('#explorer-content').inert = !open;
   $('.explorer-surface').inert = !open;
   $('.explorer-surface').setAttribute('aria-hidden', String(!open));
-  if (focus) $(open ? '#explorer-close' : '#explorer-toggle').focus({ preventScroll: true });
+  presentation?.syncPanel(open);
+  if (focus)
+    $(
+      open ? '#explorer-close' : page === 'world' ? '#utility-menu-toggle' : '#explorer-toggle',
+    )?.focus({ preventScroll: true });
   updateLayout();
 }
 function authorSummary(counts) {
@@ -216,8 +222,8 @@ function updateUI(state) {
     const row = document.createElement('tr'),
       label = document.createElement('td'),
       ring = document.createElement('i');
-    ring.className = 'type-ring';
-    ring.style.borderColor = type.color;
+    ring.className = 'type-swatch';
+    ring.style.backgroundColor = type.color;
     ring.setAttribute('aria-hidden', 'true');
     label.append(ring, document.createTextNode(type.label));
     const total = document.createElement('td'),
@@ -341,6 +347,7 @@ async function init() {
       totals = worldStats(data.records),
       year = data.metadata.year || CONFIG.year;
     i18n.apply(document, {
+      ...i18n.storyAuthors,
       year,
       typical: typical.total,
       police: { value: typical.police, className: 'police' },
@@ -373,34 +380,17 @@ async function init() {
       '--footer-logo-width',
       CONFIG.ui.footerLogoWidth + 'px',
     );
+    for (const [name, key] of [
+      ['route-story-desktop', 'storyWidth'],
+      ['route-story-tablet', 'tabletStoryWidth'],
+    ])
+      document.documentElement.style.setProperty('--' + name, CONFIG.ui[key] + 'px');
     for (const [name, color] of Object.entries(CONFIG.colors))
       document.documentElement.style.setProperty('--' + name, color);
     const world = atlas ? topojson.feature(atlas, atlas.objects.countries) : null;
     renderer = createRenderer($('#scene'), { intro, graph }, data, CONFIG, { world });
     resizeScene();
     setExplorerOpen(explorerOpen);
-    for (const [selector, counts] of [
-      ['#police-violence-list', typical.policeTypes],
-      ['#other-violence-list', typical.otherTypes],
-    ]) {
-      const list = $(selector);
-      list.replaceChildren();
-      for (const type of CONFIG.violenceTypes) {
-        const id = type.id;
-        if (!counts[id]) continue;
-        const item = document.createElement('li'),
-          marker = document.createElement('i'),
-          count = document.createElement('strong'),
-          label = document.createElement('span');
-        marker.className = 'type-ring';
-        marker.style.borderColor = type.color;
-        marker.setAttribute('aria-hidden', 'true');
-        count.textContent = counts[id];
-        label.textContent = type.label;
-        item.append(marker, count, label);
-        list.append(item);
-      }
-    }
     $('#country-total').textContent = totals.countries;
     $('#world-total').textContent = totals.cases;
     CONFIG.slides.forEach((slide, index) => {
@@ -427,12 +417,21 @@ async function init() {
     setLoadingProgress(95, 'loading.preparing');
     if (!atlas) $('#map-hint').textContent = t('map.geometryError');
     document.fonts?.ready?.then(() => {
-      renderer.invalidateCallouts();
       renderer.setState(controller.getState(), reducedMotion.matches);
       updateLayout();
     });
     window.newsCity = { controller, renderer, config: CONFIG };
-    enhancePresentation({ ...window.newsCity, data, countries });
+    presentation = enhancePresentation({
+      ...window.newsCity,
+      data,
+      countries,
+      onStats: () => setExplorerOpen(!explorerOpen, true),
+      onReplay: () => {
+        setPage('scrolly');
+        stepElements[0].querySelector('h2').focus({ preventScroll: true });
+      },
+    });
+    createRouteLegend({ controller, renderer, data, config: CONFIG });
     await finishLoading();
   } catch (error) {
     $('#loading').classList.add('error');

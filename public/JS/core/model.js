@@ -139,110 +139,6 @@ export function worldStats(records) {
   };
 }
 
-/** Point du bord du libellé, jamais à l’intérieur de la boîte. */
-export function calloutConnector(box, target) {
-  const x = Math.max(box.x, Math.min(box.x + box.width, target.x));
-  const y = Math.max(box.y, Math.min(box.y + box.height, target.y));
-  if (
-    target.x < box.x ||
-    target.x > box.x + box.width ||
-    target.y < box.y ||
-    target.y > box.y + box.height
-  )
-    return { x, y };
-  const edges = [
-    { x: box.x, y },
-    { x: box.x + box.width, y },
-    { x, y: box.y },
-    { x, y: box.y + box.height },
-  ];
-  return edges.sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y))[0];
-}
-
-/** Placement de libellés en pixels écran, avec évitement des groupes et des autres boîtes. */
-export function layoutCallouts(items, viewport) {
-  const mobile = viewport.width < 760,
-    left = mobile || viewport.country ? 12 : viewport.width * 0.35,
-    right = viewport.width - 18;
-  const top = viewport.country ? 85 : mobile ? 125 : 140;
-  const bottom = viewport.country
-    ? Math.max(top + 90, (viewport.availableHeight ?? viewport.height) - 38)
-    : mobile
-      ? Math.max(top + 220, Math.min(viewport.height * 0.47, viewport.height - 300))
-      : viewport.height - 130;
-  const occupied = [],
-    result = [];
-  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-  const overlap = (a, b) =>
-    Math.max(0, Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x)) *
-    Math.max(0, Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y));
-  for (const [index, item] of items.entries()) {
-    const width = Math.min(item.width, right - left),
-      height = item.height,
-      gap = mobile ? 18 : 25;
-    const candidates = [
-      { x: item.x - width - gap, y: item.y - height / 2 },
-      { x: item.x + gap, y: item.y - height / 2 },
-      { x: item.x - width / 2, y: item.y - gap - height },
-      { x: item.x - width / 2, y: item.y + gap },
-    ];
-    for (const distance of [gap * 2, gap * 3, gap * 4])
-      candidates.push(
-        { x: item.x - width - distance, y: item.y - height / 2 },
-        { x: item.x + distance, y: item.y - height / 2 },
-        { x: item.x - width / 2, y: item.y - distance - height },
-        { x: item.x - width / 2, y: item.y + distance },
-      );
-    if (item.bounds)
-      candidates.push(
-        { x: item.bounds.x - width - gap, y: item.y - height / 2 },
-        { x: item.bounds.x + item.bounds.width + gap, y: item.y - height / 2 },
-        { x: item.x - width / 2, y: item.bounds.y - height - gap },
-        { x: item.x - width / 2, y: item.bounds.y + item.bounds.height + gap },
-      );
-    for (const x of [left, right - width])
-      for (const y of [top, top + height + 12, bottom - height, bottom - height * 2 - 12])
-        candidates.push({ x, y });
-    const boxes = candidates.map((candidate) => ({
-      x: clamp(candidate.x, left, right - width),
-      y: clamp(candidate.y, top, Math.max(top, bottom - height)),
-      width,
-      height,
-    }));
-    // Éviter les points eux-mêmes : le rectangle englobant d’un virage
-    // contient beaucoup de vide et forçait les libellés trop loin du parcours.
-    const score = (box) =>
-      occupied.reduce((sum, prior) => sum + overlap(box, prior), 0) * 10000 +
-      items.reduce(
-        (sum, other) =>
-          sum +
-          (other.obstacles
-            ? other.obstacles.reduce(
-                (area, point) =>
-                  area + overlap(box, { x: point.x - 8, y: point.y - 8, width: 16, height: 16 }),
-                0,
-              )
-            : overlap(
-                box,
-                other.bounds || { x: other.x - 7, y: other.y - 7, width: 14, height: 14 },
-              )),
-        0,
-      ) *
-        400 +
-      Math.hypot(box.x + width / 2 - item.x, box.y + height / 2 - item.y) +
-      ((index % 2 ? box.x < item.x : box.x > item.x) ? 15 : 0);
-    // Un recouvrement même minime entre libellés ne doit pas être préféré
-    // à une position libre pour seulement mieux éviter quelques points.
-    const clearBoxes = boxes.filter((box) => occupied.every((prior) => overlap(box, prior) === 0));
-    const ranked = clearBoxes.length ? clearBoxes : boxes;
-    ranked.sort((a, b) => score(a) - score(b));
-    const box = ranked[0];
-    occupied.push(box);
-    result.push({ ...item, box, connector: calloutConnector(box, item) });
-  }
-  return result;
-}
-
 export function summarize(records) {
   const police = records.filter((record) => record.author === 'police');
   const other = records.filter((record) => record.author !== 'police');
@@ -344,12 +240,20 @@ export function pointOnRoute(metrics, progress, offset = 0) {
 export function orderRouteRecords(records, focus = null) {
   const authorOrder = new Map(DATA_SCHEMA.authors.map((author, index) => [author.id, index])),
     typeOrder = new Map(DATA_SCHEMA.violenceTypes.map((type, index) => [type.id, index]));
+  const counts = new Map();
+  if (focus)
+    for (const record of records) {
+      const key = record.author + ':' + record.violenceType;
+      counts.set(key, (counts.get(key) || 0) + 1);
+    }
   return [...records].sort((a, b) => {
     if (focus) {
       // Les vues de détail réunissent les violences de tous les auteurs
       // du bloc affiché, en conservant la séparation police / autres.
       const block = Number(a.author !== 'police') - Number(b.author !== 'police');
-      const category = typeOrder.get(a.violenceType) - typeOrder.get(b.violenceType);
+      const category =
+        counts.get(b.author + ':' + b.violenceType) - counts.get(a.author + ':' + a.violenceType) ||
+        typeOrder.get(a.violenceType) - typeOrder.get(b.violenceType);
       if (block || category) return block || category;
     }
     return (
@@ -417,7 +321,6 @@ export function deriveScene(state, data, config) {
     country,
     focus: phase === 'police-types' ? 'police' : phase === 'other-types' ? 'other' : null,
     summary: summarize(records),
-    outlined: ['police-types', 'other-types', 'overview'].includes(phase),
   };
 }
 

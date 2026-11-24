@@ -1,6 +1,14 @@
 import { countryHref } from './core/routing.js';
+import { createWorldControls } from './ui/world-controls.js';
 
-export function enhancePresentation({ config, controller, renderer, countries }) {
+export function enhancePresentation({
+  config,
+  controller,
+  renderer,
+  countries,
+  onStats,
+  onReplay,
+}) {
   const t = config.i18n.t;
   const list = document.querySelector('#country-list');
   const legend = document.querySelector('#country-chart-legend');
@@ -16,43 +24,48 @@ export function enhancePresentation({ config, controller, renderer, countries })
   }
   const tools = document.createElement('div');
   tools.className = 'comparison-tools';
-  const search = document.createElement('input');
-  search.type = 'search';
-  search.placeholder = t('ux.search');
-  search.setAttribute('aria-label', t('ux.search'));
   const sorting = document.createElement('div');
   sorting.className = 'comparison-sort';
-  const status = document.createElement('p');
-  status.className = 'search-status';
-  status.setAttribute('role', 'status');
-  status.textContent = t('ux.noResults');
-  status.hidden = true;
-  const tabs = document.createElement('div');
-  tabs.className = 'statistics-tabs';
-  tabs.setAttribute('role', 'group');
-  tabs.setAttribute('aria-label', t('stats.filter'));
   const sortButtons = [];
   const authorButtons = [];
   let author = 'all';
+  let region = '',
+    countryFilter = '';
+  const scope = () =>
+    countries.filter(
+      (country) =>
+        (!countryFilter || country.id === countryFilter) &&
+        (!region || country.records.some((record) => record.region === region)),
+    );
+  const controls = createWorldControls({
+    config,
+    controller,
+    countries,
+    onStats,
+    onReplay,
+    onReset: () => renderer.resetWorld(),
+    onChoropleth: (enabled) => renderer.setChoroplethEnabled(enabled),
+    onGeography(selection) {
+      countryFilter = selection.country;
+      region = selection.region;
+      render();
+    },
+    onClear() {
+      author = 'all';
+      region = '';
+      countryFilter = '';
+      render();
+    },
+  });
+  const tabs = controls.authorHost;
   let sort = 'count';
-  const normalize = (value) =>
-    value
-      .normalize('NFD')
-      .replace(/\p{Diacritic}/gu, '')
-      .toLowerCase();
   const countFor = (country) =>
     author === 'all' ? country.count : country.summary.authors[author] || 0;
-  const totals = Object.fromEntries(
-    config.authors.map((item) => [
-      item.id,
-      countries.reduce((sum, country) => sum + (country.summary.authors[item.id] || 0), 0),
-    ]),
-  );
 
   function render() {
-    const query = normalize(search.value.trim());
-    const available = countries.filter((country) => countFor(country) > 0);
-    const selected = available.filter((country) => normalize(country.label).includes(query));
+    const scoped = scope();
+    const available = scoped.filter((country) => countFor(country) > 0);
+    const selected = [...available];
     const maximum = Math.max(1, ...available.map(countFor));
     selected.sort((a, b) =>
       sort === 'count'
@@ -114,12 +127,28 @@ export function enhancePresentation({ config, controller, renderer, countries })
       link.addEventListener('blur', () => renderer.hoverCountry(null));
       list.append(link);
     }
-    status.hidden = selected.length > 0;
     legend.hidden = author !== 'all';
     for (const button of sortButtons)
       button.setAttribute('aria-pressed', String(button.dataset.sort === sort));
-    for (const button of authorButtons)
-      button.setAttribute('aria-pressed', String(button.dataset.author === author));
+    for (const button of authorButtons) {
+      const id = button.dataset.author;
+      button.setAttribute('aria-pressed', String(author === 'all' || id === author));
+      button.classList.toggle('is-off', author !== 'all' && id !== author);
+      const count = scoped.reduce(
+        (sum, country) => sum + (id === 'all' ? country.count : country.summary.authors[id] || 0),
+        0,
+      );
+      button.querySelector('.statistics-tab-count').textContent = count;
+      button.setAttribute('aria-label', button.title + ' · ' + count);
+    }
+    controls.setSummary({
+      cases: available.reduce((sum, country) => sum + countFor(country), 0),
+      countryCount: available.length,
+      country: countryFilter,
+      region,
+      hasFilters: author !== 'all' || Boolean(region) || Boolean(countryFilter),
+    });
+    renderer.setCountryFilter(scoped.map((country) => country.id));
     document.querySelector('#world-total').textContent = available.reduce(
       (sum, country) => sum + countFor(country),
       0,
@@ -153,7 +182,7 @@ export function enhancePresentation({ config, controller, renderer, countries })
     sorting.append(button);
     sortButtons.push(button);
   }
-  for (const id of ['all', ...config.authors.map((item) => item.id)]) {
+  for (const id of config.authors.map((item) => item.id)) {
     const button = document.createElement('button');
     button.type = 'button';
     button.dataset.author = id;
@@ -162,23 +191,28 @@ export function enhancePresentation({ config, controller, renderer, countries })
     const count = document.createElement('span');
     label.textContent = t('stats.tab.' + id);
     count.className = 'statistics-tab-count';
-    count.textContent =
-      id === 'all' ? countries.reduce((sum, country) => sum + country.count, 0) : totals[id];
+    count.textContent = countries.reduce(
+      (sum, country) => sum + (id === 'all' ? country.count : country.summary.authors[id] || 0),
+      0,
+    );
     const fullName =
       id === 'all' ? t('stats.all') : config.authors.find((item) => item.id === id).label;
     button.title = fullName;
     button.setAttribute('aria-label', fullName + ' · ' + count.textContent);
-    button.append(label, count);
+    const marker = document.createElement('i');
+    marker.className = 'author-marker';
+    marker.style.backgroundColor = config.authors.find((item) => item.id === id).color;
+    marker.setAttribute('aria-hidden', 'true');
+    button.append(count, marker, label);
     button.addEventListener('click', () => {
-      author = id;
+      // Comme dans la carte exemple : le clic désactive la catégorie parmi les deux.
+      author = author === 'all' ? config.authors.find((item) => item.id !== id).id : 'all';
       render();
     });
     tabs.append(button);
     authorButtons.push(button);
   }
-  search.addEventListener('input', render);
-  tools.append(search, sorting, status);
-  legend.before(tabs);
+  tools.append(sorting);
   list.before(tools);
   list.classList.add('statistics-bars');
   render();
@@ -190,4 +224,6 @@ export function enhancePresentation({ config, controller, renderer, countries })
   }
   heading();
   controller.subscribe(heading);
+  controls.setPanelOpen(document.querySelector('#explorer').classList.contains('is-open'));
+  return { syncPanel: controls.setPanelOpen };
 }

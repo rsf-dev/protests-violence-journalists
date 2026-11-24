@@ -3,37 +3,44 @@
   <head>
     <meta charset="utf-8" />
 <!-- publication:start -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-iCPo+uQq9inSmirH3IuDY6nTJpcY957zMowelCdjIXU='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tiles.openfreemap.org; font-src 'self'; connect-src 'self' https://tiles.openfreemap.org; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-mxT64ZC5BFXRhz5/ytuMC8gy9GOsu+lS/WLwxawHG0s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tiles.openfreemap.org https://server.arcgisonline.com; font-src 'self'; connect-src 'self' https://tiles.openfreemap.org https://server.arcgisonline.com; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
-<meta name="app-version" content="67a2bc1c5e4a8580">
-<link rel="icon" href="assets/icons/rsf-logo.svg?v=67a2bc1c5e4a8580" type="image/svg+xml">
-<link rel="preload" href="assets/fonts/Electrolize-Regular.ttf?v=67a2bc1c5e4a8580" as="font" type="font/ttf" crossorigin>
-<link rel="stylesheet" href="css/styles.css?v=67a2bc1c5e4a8580" integrity="sha384-jBRgL+y/+9WjqnWKRHyx0Aq42/8o6vbDTIrPZVHfP7EpqGSHhvQuOvwEhkrdbPlq" crossorigin="anonymous">
-<script defer src="vendor/topojson-client.min.js?v=67a2bc1c5e4a8580" integrity="sha384-Ukv1p/xTma6P4/2bY5KzWBw+ydSpXmhCMtyciIQVDJ1RmOxtCYNMF1uXT9T63H67" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="vendor/maplibre-gl.css?v=67a2bc1c5e4a8580" integrity="sha384-S+OnE5M4U3Qc2nR0RgljGrVs06xqfRg8L7uFk/pOF5+sRuSDG4oKkqKZmFrx7w09" crossorigin="anonymous">
+<meta name="app-version" content="75f223ac1ab8d22e">
+<link rel="icon" href="assets/icons/rsf-logo.svg?v=75f223ac1ab8d22e" type="image/svg+xml">
+<link rel="preload" href="assets/fonts/Electrolize-Regular.ttf?v=75f223ac1ab8d22e" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="css/styles.css?v=75f223ac1ab8d22e" integrity="sha384-yCQqft0XDat/3uYNK87YGY5UbC3yxIBW4y67onUHXAFM2L0tSVsdwv2V7RJfqbaQ" crossorigin="anonymous">
+<link rel="stylesheet" href="css/world-controls.css?v=75f223ac1ab8d22e" integrity="sha384-96ZuloKOj50Me5Pus9y9RPoJDu+1ELHPP0VjAF6Vas0EVwFN+5EHPZUQA4/jtG0N" crossorigin="anonymous">
+<link rel="stylesheet" href="css/route-legend.css?v=75f223ac1ab8d22e" integrity="sha384-TZrWsJTcK0qaFDBoR4c1SZXvNUsvowPlQqq7iMuIx3eqlS4fT9O53wRVxSyAPrcj" crossorigin="anonymous">
+<script defer src="vendor/topojson-client.min.js?v=75f223ac1ab8d22e" integrity="sha384-Ukv1p/xTma6P4/2bY5KzWBw+ydSpXmhCMtyciIQVDJ1RmOxtCYNMF1uXT9T63H67" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="css/map-theme.css?v=75f223ac1ab8d22e" integrity="sha384-IhoIjIGxpeUdVuNyKQ14Xd9Ec/XFd+ko7CcOlUGCW3Yy1ACfqhHksNQkoWJUCim1" crossorigin="anonymous">
+<link rel="stylesheet" href="vendor/maplibre-gl.css?v=75f223ac1ab8d22e" integrity="sha384-S+OnE5M4U3Qc2nR0RgljGrVs06xqfRg8L7uFk/pOF5+sRuSDG4oKkqKZmFrx7w09" crossorigin="anonymous">
 <script type="importmap">
 {
   "imports": {
-    "./JS/app.js": "./JS/app.js?v=67a2bc1c5e4a8580",
-    "./JS/config.js": "./JS/config.js?v=67a2bc1c5e4a8580",
-    "./JS/core/model.js": "./JS/core/model.js?v=67a2bc1c5e4a8580",
-    "./JS/core/resources.js": "./JS/core/resources.js?v=67a2bc1c5e4a8580",
-    "./JS/core/routing.js": "./JS/core/routing.js?v=67a2bc1c5e4a8580",
-    "./JS/core/security.js": "./JS/core/security.js?v=67a2bc1c5e4a8580",
-    "./JS/data/normalize.js": "./JS/data/normalize.js?v=67a2bc1c5e4a8580",
-    "./JS/data/schema.js": "./JS/data/schema.js?v=67a2bc1c5e4a8580",
-    "./JS/graphics/scene.js": "./JS/graphics/scene.js?v=67a2bc1c5e4a8580",
-    "./JS/graphics/world-map.js": "./JS/graphics/world-map.js?v=67a2bc1c5e4a8580",
-    "./JS/i18n/en.js": "./JS/i18n/en.js?v=67a2bc1c5e4a8580",
-    "./JS/i18n/fr.js": "./JS/i18n/fr.js?v=67a2bc1c5e4a8580",
-    "./JS/i18n/index.js": "./JS/i18n/index.js?v=67a2bc1c5e4a8580",
-    "./JS/presentation.js": "./JS/presentation.js?v=67a2bc1c5e4a8580",
-    "./JS/reglages.js": "./JS/reglages.js?v=67a2bc1c5e4a8580"
+    "./JS/app.js": "./JS/app.js?v=75f223ac1ab8d22e",
+    "./JS/config.js": "./JS/config.js?v=75f223ac1ab8d22e",
+    "./JS/core/model.js": "./JS/core/model.js?v=75f223ac1ab8d22e",
+    "./JS/core/resources.js": "./JS/core/resources.js?v=75f223ac1ab8d22e",
+    "./JS/core/routing.js": "./JS/core/routing.js?v=75f223ac1ab8d22e",
+    "./JS/core/security.js": "./JS/core/security.js?v=75f223ac1ab8d22e",
+    "./JS/data/normalize.js": "./JS/data/normalize.js?v=75f223ac1ab8d22e",
+    "./JS/data/schema.js": "./JS/data/schema.js?v=75f223ac1ab8d22e",
+    "./JS/graphics/basemaps.js": "./JS/graphics/basemaps.js?v=75f223ac1ab8d22e",
+    "./JS/graphics/route-groups.js": "./JS/graphics/route-groups.js?v=75f223ac1ab8d22e",
+    "./JS/graphics/scene.js": "./JS/graphics/scene.js?v=75f223ac1ab8d22e",
+    "./JS/graphics/world-map.js": "./JS/graphics/world-map.js?v=75f223ac1ab8d22e",
+    "./JS/i18n/en.js": "./JS/i18n/en.js?v=75f223ac1ab8d22e",
+    "./JS/i18n/fr.js": "./JS/i18n/fr.js?v=75f223ac1ab8d22e",
+    "./JS/i18n/index.js": "./JS/i18n/index.js?v=75f223ac1ab8d22e",
+    "./JS/presentation.js": "./JS/presentation.js?v=75f223ac1ab8d22e",
+    "./JS/reglages.js": "./JS/reglages.js?v=75f223ac1ab8d22e",
+    "./JS/ui/route-legend.js": "./JS/ui/route-legend.js?v=75f223ac1ab8d22e",
+    "./JS/ui/world-controls.js": "./JS/ui/world-controls.js?v=75f223ac1ab8d22e"
   }
 }
 </script>
-<script type="module" src="JS/app.js?v=67a2bc1c5e4a8580" integrity="sha384-thl0T6OFQtuoY51JxUvsZ/gLTH4Ddedr5iQz1gV3EWjFFbBqOTr23orKLhdzl5bZ" crossorigin="anonymous"></script>
+<script type="module" src="JS/app.js?v=75f223ac1ab8d22e" integrity="sha384-pT4sZRu33+Ii8ed9d4rRZfBgzFyCGrca6w/yZ3Q2w/M5qffBHNUtSsHerme7W002" crossorigin="anonymous"></script>
 <!-- publication:end -->
 <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#fcfcfa" />
@@ -41,7 +48,7 @@
       name="description"
       content="Récit interactif et carte du monde des cas de violences contre les journalistes en manifestation, à partir des données fournies."
     />
-    <title>Les violences contre les journalistes en manifestation en 2026</title>
+    <title>Violences commises dans le monde en 2026 contre les journalistes couvrant les manifestations</title>
     <link rel="alternate" hreflang="fr" href="./" />
     <link rel="alternate" hreflang="en" href="./?lang=en" />
   </head>
@@ -63,13 +70,13 @@
         aria-label="RSF — début du récit"
         ><img
           class="brand-logo"
-          src="assets/icons/rsf-logo.svg?v=67a2bc1c5e4a8580"
+          src="assets/icons/rsf-logo.svg?v=75f223ac1ab8d22e"
           width="52"
           height="36"
           data-i18n-alt="brand.alt"
           alt="RSF — Reporters sans frontières"
       /></a>
-      <h1 class="infographic-title" data-i18n="page.title">Les violences contre les journalistes en manifestation en 2026</h1>
+      <h1 class="infographic-title" data-i18n="page.title">Violences commises dans le monde en 2026 contre les journalistes couvrant les manifestations</h1>
     </header>
     <main>
       <section
@@ -86,43 +93,35 @@
         </article>
         <article class="story-step" id="cent-journalistes" data-step="1">
           <div class="step-card">
-            <h2 data-i18n="story.neutral.title">À News City, 100 journalistes vont subir des violences en couvrant la manifestation d'aujourd'hui.</h2>
-            <p data-i18n="story.neutral.description">Cette représentation fictive représente la répartition des 234 cas recensés en 2026, quelles violences ont-ils subies et par qui, en pourcentage.</p>
+            <h2 data-i18n="story.neutral.title">À News City, 100 journalistes vont subir des violences en couvrant la manifestation.</h2>
+            <p data-i18n="story.neutral.description">Cette carte représente la répartition moyenne des 234 cas d’entraves et violences contre des journalistes en manifestation dans le monde en 2026.</p>
           </div>
         </article>
         <article class="story-step" id="forces-ordre" data-step="2">
           <div class="step-card">
-            <h2 data-i18n="story.police.title">Sur 100 journalistes représentant les cas recensés,</h2>
-            <p data-i18n="story.police.police">67 représentent des cas attribués aux forces de l’ordre et autorités.</p>
-            <p data-i18n="story.police.other">Les 33 autres représentent des cas attribués aux manifestants ou à des tiers inconnus.</p>
+            <h2 data-i18n="story.police.title">En 2026, sur 100 journalistes en moyenne,</h2>
+            <p data-i18n="story.police.police">67 subissent des violences imputables aux forces de l’ordre et aux autorités.</p>
+            <p data-i18n="story.police.other">33 par des manifestants ou des tiers inconnus.</p>
           </div>
         </article>
         <article class="story-step" id="violences-police" data-step="3">
           <div class="step-card">
-            <h2 data-i18n="story.policeTypes.title">Pour les cas attribués aux forces de l’ordre et autorités, les violences se répartissent ainsi :</h2>
-            <ul
-              class="violence-list"
-              id="police-violence-list"
-              aria-label="Pour les cas attribués aux forces de l’ordre et autorités, les violences se répartissent ainsi :"
-              data-i18n-aria-label="story.policeTypes.title"
-            ></ul>
+            <h2 data-i18n="story.policeTypes.title">Pour les cas attribués aux forces de l’ordre et autorités,</h2>
+            <p data-i18n="story.types.description">les violences se répartissent ainsi :</p>
+            <ul class="violence-list" id="police-violence-list" data-i18n-aria-label="story.policeTypes.title"></ul>
           </div>
         </article>
         <article class="story-step" id="autres-auteurs" data-step="4">
           <div class="step-card">
-            <h2 data-i18n="story.otherTypes.title">Pour les cas attribués aux manifestants ou à des tiers inconnus, les violences se répartissent ainsi :</h2>
-            <ul
-              class="violence-list"
-              id="other-violence-list"
-              aria-label="Pour les autres catégories d’auteurs, les violences se répartissent ainsi :"
-              data-i18n-aria-label="story.otherTypes.title"
-            ></ul>
+            <h2 data-i18n="story.otherTypes.title">Pour les cas attribués aux manifestants ou à des tiers inconnus,</h2>
+            <p data-i18n="story.types.description">les violences se répartissent ainsi :</p>
+            <ul class="violence-list" id="other-violence-list" data-i18n-aria-label="story.otherTypes.title"></ul>
           </div>
         </article>
         <article class="story-step" id="ville-type" data-step="5">
           <div class="step-card">
             <h2 data-i18n="story.overview.title">Aller plus loin</h2>
-            <p data-i18n="story.overview.description">En 2026, RSF recense 234 violences contre des journalistes en manifestation réparties dans 19 pays.</p>
+            <p data-i18n="story.overview.description">En 2026, RSF recense dans le monde 234 violences contre des journalistes en manifestation réparties dans 19 pays.</p>
             <a class="text-action" id="world-data-link" href="./"
               ><span data-i18n="story.worldAction">Voir les données mondiales</span></a
             >
@@ -245,7 +244,7 @@
             aria-label="RSF — début du récit"
             ><img
               class="brand-logo"
-              src="assets/icons/rsf-logo.svg?v=67a2bc1c5e4a8580"
+              src="assets/icons/rsf-logo.svg?v=75f223ac1ab8d22e"
               width="36"
               height="25"
               data-i18n-alt="brand.alt"

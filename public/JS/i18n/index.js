@@ -61,6 +61,10 @@ export function createI18n(language = REGLAGES.defaultLanguage) {
           : value);
   const regionName = (value) => messages['region.' + value] || value;
   const mediaName = (value) => messages['media.' + value] || value;
+  const storyAuthors = {
+    policeAuthor: { value: t('story.policeTypes.actor'), className: 'police' },
+    otherAuthor: { value: t('story.otherTypes.actor'), className: 'other' },
+  };
   return {
     language: lang,
     t,
@@ -71,5 +75,6 @@ export function createI18n(language = REGLAGES.defaultLanguage) {
     dateLabel,
     regionName,
     mediaName,
+    storyAuthors,
   };
 }

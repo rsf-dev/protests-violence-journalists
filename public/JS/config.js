@@ -26,7 +26,11 @@ export function createConfig(language = REGLAGES.defaultLanguage, metadata = {})
     })),
     slides: REGLAGES.slides.map((slide) => ({
       ...slide,
-      title: t(slide.titleKey, { typical: 100 }),
+      title: t(slide.titleKey, {
+        typical: 100,
+        year: metadata.year || REGLAGES.year,
+        ...i18n.storyAuthors,
+      }),
     })),
   };
 }
