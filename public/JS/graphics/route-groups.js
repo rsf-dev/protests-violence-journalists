@@ -2,7 +2,7 @@ import { layoutRouteRecords, pointOnRoute, routeMetrics } from '../core/model.js
 
 /** Les indications de lecture restent collectives, séparées des catégories interactives. */
 export function storyKeyKind(scene) {
-  if (scene.country || scene.kind === 'world') return null;
+  if (scene.country || scene.kind === 'comparison') return null;
   if (scene.phase === 'neutral') return 'unit';
   return ['police', 'overview'].includes(scene.phase) ? 'authors' : null;
 }

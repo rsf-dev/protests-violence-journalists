@@ -133,8 +133,7 @@ export function createRenderer(
   }
   function setState(next, prefersReduced = false) {
     const nextScene = deriveScene(next, data, config);
-    if (nextScene.kind === 'world')
-      throw new Error('Use the world map renderer for the world view.');
+    if (nextScene.kind === 'comparison') return;
     const enteringRoute = scene?.kind === 'intro' && nextScene.kind === 'city';
     if (!scene || nextScene.phase !== scene.phase || nextScene.country?.id !== scene.country?.id) {
       age = 0;

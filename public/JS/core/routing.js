@@ -4,7 +4,7 @@ import { createI18n } from '../i18n/index.js';
 
 export function pageHref(page = 'scrolly', language = REGLAGES.defaultLanguage, countryId = '') {
   const lang = REGLAGES.languages.includes(language) ? language : REGLAGES.defaultLanguage;
-  if (!['scrolly', 'world', 'country'].includes(page))
+  if (!['scrolly', 'comparison', 'country'].includes(page))
     throw new Error(createI18n(lang).t('error.page', { page }));
   if (page === 'country' && !/^[a-z]{2,3}$/i.test(String(countryId)))
     throw new Error(createI18n(lang).t('error.countryCode'));
@@ -31,9 +31,9 @@ export function readRoute(address, state = null) {
     ? 'country'
     : rawCountry !== null ||
         view === 'country' ||
-        view === 'world' ||
-        state?.newsCity?.view === 'world'
-      ? 'world'
+        view === 'comparison' ||
+        state?.newsCity?.view === 'comparison'
+      ? 'comparison'
       : 'scrolly';
   let slide = '';
   try {
@@ -46,7 +46,7 @@ export function readRoute(address, state = null) {
 
 export function createPageController(data, config, page = 'scrolly', countryId = '') {
   const controller = createController(data, config);
-  if (page === 'world') controller.skip();
+  if (page === 'comparison') controller.skip();
   else if (page === 'country') {
     if (!controller.selectCountry(countryId))
       throw new Error(config.i18n.t('error.country', { id: countryId }));

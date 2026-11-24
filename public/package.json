@@ -1,0 +1,11 @@
+{
+  "name": "news-city-poc-sans-carte",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare:site": "node scripts/prepare-site.mjs",
+    "prestart": "node scripts/prepare-site.mjs",
+    "start": "node scripts/server.mjs"
+  }
+}

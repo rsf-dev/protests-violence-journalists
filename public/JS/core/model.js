@@ -305,8 +305,8 @@ export function layoutRouteRecords(records, route, focus = null, radius = 3.25) 
 
 export function deriveScene(state, data, config) {
   const phase = state.inExplore
-    ? state.view === 'world'
-      ? 'world'
+    ? state.view === 'comparison'
+      ? 'comparison'
       : 'overview'
     : config.slides[state.slide].phase;
   const country =
@@ -315,7 +315,7 @@ export function deriveScene(state, data, config) {
       : null;
   const records = country ? country.records : typicalRecords(data);
   return {
-    kind: phase === 'world' ? 'world' : phase === 'intro' ? 'intro' : 'city',
+    kind: phase === 'comparison' ? 'comparison' : phase === 'intro' ? 'intro' : 'city',
     phase,
     records,
     country,
@@ -325,7 +325,7 @@ export function deriveScene(state, data, config) {
 }
 
 export function createController(data, config) {
-  const state = { slide: 0, inExplore: false, view: 'world', countryId: null };
+  const state = { slide: 0, inExplore: false, view: 'comparison', countryId: null };
   const listeners = new Set(),
     countryIds = new Set(groupCountries(data.records).map((group) => group.id));
   const update = (patch) => {
@@ -347,8 +347,8 @@ export function createController(data, config) {
         inExplore: false,
       });
     },
-    skip: () => update({ inExplore: true, view: 'world', countryId: null }),
-    replay: () => update({ slide: 0, inExplore: false, view: 'world', countryId: null }),
+    skip: () => update({ inExplore: true, view: 'comparison', countryId: null }),
+    replay: () => update({ slide: 0, inExplore: false, view: 'comparison', countryId: null }),
     selectCountry: (id) =>
       countryIds.has(id) && update({ inExplore: true, view: 'country', countryId: id }),
   };

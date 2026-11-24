@@ -3,52 +3,47 @@
   <head>
     <meta charset="utf-8" />
 <!-- publication:start -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-mxT64ZC5BFXRhz5/ytuMC8gy9GOsu+lS/WLwxawHG0s='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tiles.openfreemap.org https://server.arcgisonline.com; font-src 'self'; connect-src 'self' https://tiles.openfreemap.org https://server.arcgisonline.com; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-adWJUm+Jai/rWV0S8rD9C3tl6MQozmbdNgVGPVX9p0k='; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
-<meta name="app-version" content="75f223ac1ab8d22e">
-<link rel="icon" href="assets/icons/rsf-logo.svg?v=75f223ac1ab8d22e" type="image/svg+xml">
-<link rel="preload" href="assets/fonts/Electrolize-Regular.ttf?v=75f223ac1ab8d22e" as="font" type="font/ttf" crossorigin>
-<link rel="stylesheet" href="css/styles.css?v=75f223ac1ab8d22e" integrity="sha384-yCQqft0XDat/3uYNK87YGY5UbC3yxIBW4y67onUHXAFM2L0tSVsdwv2V7RJfqbaQ" crossorigin="anonymous">
-<link rel="stylesheet" href="css/world-controls.css?v=75f223ac1ab8d22e" integrity="sha384-96ZuloKOj50Me5Pus9y9RPoJDu+1ELHPP0VjAF6Vas0EVwFN+5EHPZUQA4/jtG0N" crossorigin="anonymous">
-<link rel="stylesheet" href="css/route-legend.css?v=75f223ac1ab8d22e" integrity="sha384-TZrWsJTcK0qaFDBoR4c1SZXvNUsvowPlQqq7iMuIx3eqlS4fT9O53wRVxSyAPrcj" crossorigin="anonymous">
-<script defer src="vendor/topojson-client.min.js?v=75f223ac1ab8d22e" integrity="sha384-Ukv1p/xTma6P4/2bY5KzWBw+ydSpXmhCMtyciIQVDJ1RmOxtCYNMF1uXT9T63H67" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="css/map-theme.css?v=75f223ac1ab8d22e" integrity="sha384-IhoIjIGxpeUdVuNyKQ14Xd9Ec/XFd+ko7CcOlUGCW3Yy1ACfqhHksNQkoWJUCim1" crossorigin="anonymous">
-<link rel="stylesheet" href="vendor/maplibre-gl.css?v=75f223ac1ab8d22e" integrity="sha384-S+OnE5M4U3Qc2nR0RgljGrVs06xqfRg8L7uFk/pOF5+sRuSDG4oKkqKZmFrx7w09" crossorigin="anonymous">
+<meta name="app-version" content="97ad30d89e68c5a6">
+<link rel="icon" href="assets/icons/rsf-logo.svg?v=97ad30d89e68c5a6" type="image/svg+xml">
+<link rel="preload" href="assets/fonts/Electrolize-Regular.ttf?v=97ad30d89e68c5a6" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="css/styles.css?v=97ad30d89e68c5a6" integrity="sha384-DtGkW+aKHrMWleKRY55wgdYknclcrPGNiVejItDrBldIWp+y3+RF1SzTCrCx917E" crossorigin="anonymous">
+<link rel="stylesheet" href="css/route-legend.css?v=97ad30d89e68c5a6" integrity="sha384-TZrWsJTcK0qaFDBoR4c1SZXvNUsvowPlQqq7iMuIx3eqlS4fT9O53wRVxSyAPrcj" crossorigin="anonymous">
+<link rel="stylesheet" href="css/poc.css?v=97ad30d89e68c5a6" integrity="sha384-kgO6NFF4z/ohnP3ZN9UNH0YkE4K2+013peSV3HH6XaYrOYTHAgaK3Id7QVmeQOH1" crossorigin="anonymous">
 <script type="importmap">
 {
   "imports": {
-    "./JS/app.js": "./JS/app.js?v=75f223ac1ab8d22e",
-    "./JS/config.js": "./JS/config.js?v=75f223ac1ab8d22e",
-    "./JS/core/model.js": "./JS/core/model.js?v=75f223ac1ab8d22e",
-    "./JS/core/resources.js": "./JS/core/resources.js?v=75f223ac1ab8d22e",
-    "./JS/core/routing.js": "./JS/core/routing.js?v=75f223ac1ab8d22e",
-    "./JS/core/security.js": "./JS/core/security.js?v=75f223ac1ab8d22e",
-    "./JS/data/normalize.js": "./JS/data/normalize.js?v=75f223ac1ab8d22e",
-    "./JS/data/schema.js": "./JS/data/schema.js?v=75f223ac1ab8d22e",
-    "./JS/graphics/basemaps.js": "./JS/graphics/basemaps.js?v=75f223ac1ab8d22e",
-    "./JS/graphics/route-groups.js": "./JS/graphics/route-groups.js?v=75f223ac1ab8d22e",
-    "./JS/graphics/scene.js": "./JS/graphics/scene.js?v=75f223ac1ab8d22e",
-    "./JS/graphics/world-map.js": "./JS/graphics/world-map.js?v=75f223ac1ab8d22e",
-    "./JS/i18n/en.js": "./JS/i18n/en.js?v=75f223ac1ab8d22e",
-    "./JS/i18n/fr.js": "./JS/i18n/fr.js?v=75f223ac1ab8d22e",
-    "./JS/i18n/index.js": "./JS/i18n/index.js?v=75f223ac1ab8d22e",
-    "./JS/presentation.js": "./JS/presentation.js?v=75f223ac1ab8d22e",
-    "./JS/reglages.js": "./JS/reglages.js?v=75f223ac1ab8d22e",
-    "./JS/ui/route-legend.js": "./JS/ui/route-legend.js?v=75f223ac1ab8d22e",
-    "./JS/ui/world-controls.js": "./JS/ui/world-controls.js?v=75f223ac1ab8d22e"
+    "./JS/app.js": "./JS/app.js?v=97ad30d89e68c5a6",
+    "./JS/config.js": "./JS/config.js?v=97ad30d89e68c5a6",
+    "./JS/core/model.js": "./JS/core/model.js?v=97ad30d89e68c5a6",
+    "./JS/core/resources.js": "./JS/core/resources.js?v=97ad30d89e68c5a6",
+    "./JS/core/routing.js": "./JS/core/routing.js?v=97ad30d89e68c5a6",
+    "./JS/core/security.js": "./JS/core/security.js?v=97ad30d89e68c5a6",
+    "./JS/data/schema.js": "./JS/data/schema.js?v=97ad30d89e68c5a6",
+    "./JS/graphics/route-groups.js": "./JS/graphics/route-groups.js?v=97ad30d89e68c5a6",
+    "./JS/graphics/scene.js": "./JS/graphics/scene.js?v=97ad30d89e68c5a6",
+    "./JS/i18n/en.js": "./JS/i18n/en.js?v=97ad30d89e68c5a6",
+    "./JS/i18n/fr.js": "./JS/i18n/fr.js?v=97ad30d89e68c5a6",
+    "./JS/i18n/index.js": "./JS/i18n/index.js?v=97ad30d89e68c5a6",
+    "./JS/presentation.js": "./JS/presentation.js?v=97ad30d89e68c5a6",
+    "./JS/reglages.js": "./JS/reglages.js?v=97ad30d89e68c5a6",
+    "./JS/ui/route-legend.js": "./JS/ui/route-legend.js?v=97ad30d89e68c5a6"
   }
 }
 </script>
-<script type="module" src="JS/app.js?v=75f223ac1ab8d22e" integrity="sha384-pT4sZRu33+Ii8ed9d4rRZfBgzFyCGrca6w/yZ3Q2w/M5qffBHNUtSsHerme7W002" crossorigin="anonymous"></script>
+<script type="module" src="JS/app.js?v=97ad30d89e68c5a6" integrity="sha384-inMerGzMVhXRaqGBtDYIYufWZl/SI0qfi+LjpmocUnOK3AAEQYemGFrmmcOsLqwo" crossorigin="anonymous"></script>
 <!-- publication:end -->
 <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#fcfcfa" />
     <meta
       name="description"
-      content="Récit interactif et carte du monde des cas de violences contre les journalistes en manifestation, à partir des données fournies."
+      content="Récit interactif et parcours par pays des violences contre les journalistes en manifestation, à partir des données fournies."
     />
-    <title>Violences commises dans le monde en 2026 contre les journalistes couvrant les manifestations</title>
+    <title>
+      Violences commises dans le monde en 2026 contre les journalistes couvrant les manifestations
+    </title>
     <link rel="alternate" hreflang="fr" href="./" />
     <link rel="alternate" hreflang="en" href="./?lang=en" />
   </head>
@@ -70,7 +65,7 @@
         aria-label="RSF — début du récit"
         ><img
           class="brand-logo"
-          src="assets/icons/rsf-logo.svg?v=75f223ac1ab8d22e"
+          src="assets/icons/rsf-logo.svg?v=97ad30d89e68c5a6"
           width="52"
           height="36"
           data-i18n-alt="brand.alt"
@@ -108,14 +103,22 @@
           <div class="step-card">
             <h2 data-i18n="story.policeTypes.title">Pour les cas attribués aux forces de l’ordre et autorités,</h2>
             <p data-i18n="story.types.description">les violences se répartissent ainsi :</p>
-            <ul class="violence-list" id="police-violence-list" data-i18n-aria-label="story.policeTypes.title"></ul>
+            <ul
+              class="violence-list"
+              id="police-violence-list"
+              data-i18n-aria-label="story.policeTypes.title"
+            ></ul>
           </div>
         </article>
         <article class="story-step" id="autres-auteurs" data-step="4">
           <div class="step-card">
             <h2 data-i18n="story.otherTypes.title">Pour les cas attribués aux manifestants ou à des tiers inconnus,</h2>
             <p data-i18n="story.types.description">les violences se répartissent ainsi :</p>
-            <ul class="violence-list" id="other-violence-list" data-i18n-aria-label="story.otherTypes.title"></ul>
+            <ul
+              class="violence-list"
+              id="other-violence-list"
+              data-i18n-aria-label="story.otherTypes.title"
+            ></ul>
           </div>
         </article>
         <article class="story-step" id="ville-type" data-step="5">
@@ -131,7 +134,7 @@
       <section
         class="explorer"
         id="explorer"
-        aria-label="Détails de la carte"
+        aria-label="Détails des pays"
         data-i18n-aria-label="panel.label"
       >
         <button
@@ -166,7 +169,7 @@
               <h2 id="explorer-title" tabindex="-1">Comparer les pays</h2>
               <p id="explorer-description" data-i18n="panel.worldDescription">Cliquez sur un pays pour voir le détail.</p>
             </div>
-            <div id="world-panel">
+            <div id="comparison-panel">
               <div class="world-totals">
                 <div>
                   <strong id="country-total">19</strong>
@@ -231,7 +234,7 @@
             ><svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M5 8a8 8 0 1 1-.2 8M5 3v5h5" /></svg
             ><span data-i18n="nav.restart">Recommencer</span></a
-          ><a id="return-map-button" href="./" hidden
+          ><a id="return-countries-button" href="./" hidden
             ><span data-i18n="nav.countries">Revenir aux pays</span></a
           >
         </nav>
@@ -244,7 +247,7 @@
             aria-label="RSF — début du récit"
             ><img
               class="brand-logo"
-              src="assets/icons/rsf-logo.svg?v=75f223ac1ab8d22e"
+              src="assets/icons/rsf-logo.svg?v=97ad30d89e68c5a6"
               width="36"
               height="25"
               data-i18n-alt="brand.alt"
@@ -253,8 +256,8 @@
         </div>
       </div>
     </footer>
-    <p class="map-hint" id="map-hint" hidden>
-      Glissez pour tourner · cliquez sur un pays pour sa répartition
+    <p class="map-hint" id="scene-hint" hidden>
+      Les répartitions par auteur et par violence sont dans le panneau du pays.
     </p>
     <div class="loading" id="loading" aria-busy="true">
       <section class="loading-box" aria-labelledby="loading-title">

@@ -10,10 +10,10 @@ import {
   deriveScene,
   worldStats,
 } from './core/model.js';
-import { createRenderer } from './graphics/world-map.js';
+import { createRenderer } from './graphics/scene.js';
 import { pageHref, readRoute, createPageController } from './core/routing.js';
 import { resourceURL } from './core/resources.js';
-import { DATA_LIMITS, fetchJSON, validateAtlas } from './core/security.js';
+import { DATA_LIMITS, fetchJSON } from './core/security.js';
 
 const route = readRoute(window.location.href, history.state);
 let CONFIG = createConfig(route.language);
@@ -34,9 +34,7 @@ let controller,
   data,
   countries,
   scrollFrame = null;
-let presentation = null;
-let explorerOpen =
-  page === 'world' ? CONFIG.ui.worldPanelOpen : page === 'country' && CONFIG.ui.countryPanelOpen;
+let explorerOpen = page === 'comparison' || (page === 'country' && CONFIG.ui.countryPanelOpen);
 
 function loadImage(url) {
   return new Promise((resolve, reject) => {
@@ -74,18 +72,43 @@ async function finishLoading() {
   if (!reducedMotion.matches) await delay(400);
   $('#loading').hidden = true;
 }
-function setPage(view) {
-  const sameAddress = view === 'world' && page === 'scrolly';
+function setPage(view, { lastSlide = false } = {}) {
+  const sameAddress = view === 'comparison' && page === 'scrolly';
   page = view;
   document.body.dataset.page = view;
   document.body.dataset.country = '';
   const state = { newsCity: { view } };
   const href = sameAddress ? window.location.href : pageHref(view, CONFIG.language);
   history.pushState(state, '', href);
-  if (view === 'world') controller.skip();
-  else controller.replay();
-  setExplorerOpen(view === 'world');
+  if (view === 'comparison') controller.skip();
+  else {
+    controller.replay();
+    if (lastSlide) controller.setSlide(CONFIG.slides.length - 1);
+  }
+  setExplorerOpen(view === 'comparison');
+  if (view === 'scrolly') {
+    stepElements[lastSlide ? stepElements.length - 1 : 0].scrollIntoView({ behavior: 'auto' });
+  } else {
+    window.scrollTo(0, 0);
+    $('#explorer-close').focus({ preventScroll: true });
+  }
+}
+function openCountry(id) {
+  if (!countries.some((country) => country.id === id)) return;
+  page = 'country';
+  document.body.dataset.page = page;
+  document.body.dataset.country = id;
+  history.pushState({ newsCity: { view: page } }, '', pageHref(page, CONFIG.language, id));
+  controller.selectCountry(id);
+  setExplorerOpen(true);
   window.scrollTo(0, 0);
+  $('#explorer-title').focus({ preventScroll: true });
+}
+function closeExplorer() {
+  if (page === 'comparison') {
+    setPage('scrolly', { lastSlide: true });
+    $('#world-data-link').focus({ preventScroll: true });
+  } else setExplorerOpen(false, true);
 }
 function updateLayout() {
   document.documentElement.style.setProperty(
@@ -96,6 +119,11 @@ function updateLayout() {
 function resizeScene() {
   const bounds = $('#scene').getBoundingClientRect();
   renderer.resize(bounds.width, bounds.height, devicePixelRatio || 1);
+  if (page === 'comparison') {
+    renderer.setSuspended(false);
+    renderer.renderFrame(performance.now());
+    renderer.setSuspended(true);
+  }
   updateLayout();
 }
 function setExplorerOpen(open, focus = false) {
@@ -109,11 +137,7 @@ function setExplorerOpen(open, focus = false) {
   $('#explorer-content').inert = !open;
   $('.explorer-surface').inert = !open;
   $('.explorer-surface').setAttribute('aria-hidden', String(!open));
-  presentation?.syncPanel(open);
-  if (focus)
-    $(
-      open ? '#explorer-close' : page === 'world' ? '#utility-menu-toggle' : '#explorer-toggle',
-    )?.focus({ preventScroll: true });
+  if (focus) $(open ? '#explorer-close' : '#explorer-toggle')?.focus({ preventScroll: true });
   updateLayout();
 }
 function authorSummary(counts) {
@@ -151,25 +175,28 @@ function authorBar(counts, total, maximum = total) {
 }
 function updateUI(state) {
   const scene = deriveScene(state, data, CONFIG),
-    world = scene.kind === 'world';
+    comparison = scene.kind === 'comparison';
   const country = scene.country?.label || CONFIG.cityName;
-  const showTitle = world || (!state.inExplore && ['intro', 'overview'].includes(scene.phase));
+  const showTitle = !state.inExplore && ['intro', 'overview'].includes(scene.phase);
   document.body.classList.toggle('is-exploring', state.inExplore);
   document.body.classList.toggle('has-page-title', showTitle);
   $('.infographic-title').hidden = !showTitle;
   $('#story-progress').hidden = state.inExplore;
-  $('#explorer-toggle-label').textContent = t(world ? 'panel.worldToggle' : 'panel.countryToggle', {
-    countries: countries.length,
-    country,
-  });
-  $('#return-map-button').hidden = !(state.inExplore && scene.country);
-  $('#map-hint').hidden = !(world || scene.country);
-  $('#map-hint').textContent = t(world ? 'scene.mapHint' : 'scene.countryHint');
-  $('#scene').tabIndex = state.inExplore ? 0 : -1;
+  $('#explorer-toggle-label').textContent = t(
+    comparison ? 'panel.worldToggle' : 'panel.countryToggle',
+    {
+      countries: countries.length,
+      country,
+    },
+  );
+  $('#return-countries-button').hidden = !(state.inExplore && scene.country);
+  $('#scene-hint').hidden = !scene.country;
+  $('#scene-hint').textContent = t('scene.countryHint');
+  $('#scene').tabIndex = scene.country ? 0 : -1;
   $('#scene').setAttribute(
     'aria-label',
-    world
-      ? t('scene.world')
+    comparison
+      ? t('summary.world', { cases: data.records.length, countries: countries.length })
       : scene.kind === 'intro'
         ? t('scene.intro')
         : t('scene.city', {
@@ -186,16 +213,11 @@ function updateUI(state) {
     if (index === state.slide) button.setAttribute('aria-current', 'step');
     else button.removeAttribute('aria-current');
   });
-  $('#world-panel').hidden = !world;
-  $('#city-panel').hidden = world;
-  $('#explorer-title').textContent = world
-    ? t('panel.worldTitle', {
-        cases: data.records.length,
-        countries: countries.length,
-        year: data.metadata.year || CONFIG.year,
-      })
-    : country;
-  $('#explorer-description').hidden = !world;
+  $('#comparison-panel').hidden = !comparison;
+  $('#city-panel').hidden = comparison;
+  $('#explorer-title').textContent = comparison ? t('ux.worldTitle') : country;
+  $('#explorer-description').hidden = !comparison;
+  $('#explorer-description').textContent = t('ux.worldDescription');
   $('#city-total').textContent = scene.records.length;
   const actors = $('#actor-counts');
   actors.replaceChildren();
@@ -236,7 +258,7 @@ function updateUI(state) {
     row.append(label, total, authors);
     table.append(row);
   }
-  const summary = world
+  const summary = comparison
     ? t('summary.world', { cases: data.records.length, countries: countries.length }) +
       ' ' +
       countries.map((item) => item.label + ': ' + item.count).join('. ')
@@ -251,9 +273,18 @@ function updateUI(state) {
     ' ' +
     t('summary.source');
   document.title =
-    (scene.country ? country + ' — ' : world ? t('page.worldPrefix') : '') +
+    (scene.country ? country + ' — ' : comparison ? t('page.worldPrefix') : '') +
     t('page.title', { year: data.metadata.year || CONFIG.year });
-  renderer.setState(state, reducedMotion.matches);
+  // La comparaison ouvre seulement le panneau, sur la synthèse du récit figée.
+  renderer.setState(
+    comparison ? { ...state, inExplore: false, slide: CONFIG.slides.length - 1 } : state,
+    comparison || reducedMotion.matches,
+  );
+  if (comparison) {
+    renderer.setSuspended(false);
+    renderer.renderFrame(performance.now());
+  }
+  renderer.setSuspended(comparison || document.hidden);
   updateLayout();
 }
 function updateScroll() {
@@ -268,10 +299,10 @@ function queueScroll() {
   if (scrollFrame === null) scrollFrame = requestAnimationFrame(updateScroll);
 }
 function wireEvents() {
-  for (const selector of ['#world-data-link', '#return-map-button'])
+  for (const selector of ['#world-data-link', '#return-countries-button'])
     $(selector).addEventListener('click', (event) => {
       event.preventDefault();
-      setPage('world');
+      setPage('comparison');
     });
   for (const link of document.querySelectorAll('.brand,#reset-button'))
     link.addEventListener('click', (event) => {
@@ -290,38 +321,32 @@ function wireEvents() {
     layoutObserver.observe($('.page-footer'));
     layoutObserver.observe($('.site-header'));
   }
-  reducedMotion.addEventListener('change', () =>
-    renderer.setState(controller.getState(), reducedMotion.matches),
+  reducedMotion.addEventListener('change', () => updateUI(controller.getState()));
+  document.addEventListener('visibilitychange', () =>
+    renderer.setSuspended(document.hidden || page === 'comparison'),
   );
-  document.addEventListener('visibilitychange', () => renderer.setSuspended(document.hidden));
   $('#explorer-toggle').addEventListener('click', () => setExplorerOpen(!explorerOpen, true));
-  $('#explorer-close').addEventListener('click', () => setExplorerOpen(false, true));
+  $('#explorer-close').addEventListener('click', closeExplorer);
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
     if (page !== 'scrolly' && explorerOpen) {
       event.preventDefault();
-      setExplorerOpen(false, true);
+      closeExplorer();
     }
   });
 }
 async function init() {
   try {
-    if (!globalThis.topojson) throw new Error(t('error.libraries'));
     setLoadingProgress(10);
     let completedResources = 0;
     const trackResource = async (promise) => {
       const result = await promise;
       completedResources += 1;
-      setLoadingProgress(10 + (completedResources / 4) * 70);
+      setLoadingProgress(10 + (completedResources / 3) * 70);
       return result;
     };
-    const [source, atlas, intro, graph] = await Promise.all([
+    const [source, intro, graph] = await Promise.all([
       trackResource(fetchJSON(resourceURL(CONFIG.dataUrl), { maxBytes: DATA_LIMITS.eventsBytes })),
-      trackResource(
-        fetchJSON(resourceURL(CONFIG.atlasUrl), { maxBytes: DATA_LIMITS.atlasBytes })
-          .then(validateAtlas)
-          .catch(() => null),
-      ),
       trackResource(loadImage(CONFIG.images.intro)),
       trackResource(loadImage(CONFIG.images.graph)),
     ]);
@@ -330,7 +355,7 @@ async function init() {
     data = validateDataset(source, CONFIG);
     countries = groupCountries(data.records, CONFIG.language);
     if (page === 'country' && !countries.some((country) => country.id === route.country)) {
-      page = 'world';
+      page = 'comparison';
       document.body.dataset.page = page;
       document.body.dataset.country = '';
     }
@@ -339,7 +364,7 @@ async function init() {
     history.replaceState(
       { newsCity: { view: page } },
       '',
-      canonical + (['scrolly', 'world'].includes(page) ? window.location.hash : ''),
+      canonical + (page === 'scrolly' ? window.location.hash : ''),
     );
     const initialSlide = CONFIG.slides.findIndex((slide) => slide.id === route.slide);
     if (page === 'scrolly' && initialSlide >= 0) controller.setSlide(initialSlide);
@@ -359,8 +384,8 @@ async function init() {
     document.querySelector('meta[name="description"]').content = t('page.description');
     for (const link of document.querySelectorAll('.brand,#reset-button'))
       link.href = pageHref('scrolly', CONFIG.language);
-    for (const link of document.querySelectorAll('#world-data-link,#return-map-button'))
-      link.href = pageHref('world', CONFIG.language);
+    for (const link of document.querySelectorAll('#world-data-link,#return-countries-button'))
+      link.href = pageHref('comparison', CONFIG.language);
     for (const link of document.querySelectorAll('link[hreflang]'))
       link.href = pageHref(page, link.hreflang, document.body.dataset.country);
     document.documentElement.style.setProperty('--panel-width', CONFIG.ui.panelWidth + 'px');
@@ -387,8 +412,7 @@ async function init() {
       document.documentElement.style.setProperty('--' + name, CONFIG.ui[key] + 'px');
     for (const [name, color] of Object.entries(CONFIG.colors))
       document.documentElement.style.setProperty('--' + name, color);
-    const world = atlas ? topojson.feature(atlas, atlas.objects.countries) : null;
-    renderer = createRenderer($('#scene'), { intro, graph }, data, CONFIG, { world });
+    renderer = createRenderer($('#scene'), { intro, graph }, data, CONFIG);
     resizeScene();
     setExplorerOpen(explorerOpen);
     $('#country-total').textContent = totals.countries;
@@ -407,29 +431,21 @@ async function init() {
     });
     controller.subscribe(updateUI);
     wireEvents();
-    renderer.setState(controller.getState(), true);
-    renderer.renderFrame(performance.now());
     updateUI(controller.getState());
+    renderer.renderFrame(performance.now());
     if (page === 'scrolly' && initialSlide >= 0)
       stepElements[initialSlide].scrollIntoView({ block: 'start', behavior: 'auto' });
     updateScroll();
-    await renderer.ready();
     setLoadingProgress(95, 'loading.preparing');
-    if (!atlas) $('#map-hint').textContent = t('map.geometryError');
     document.fonts?.ready?.then(() => {
-      renderer.setState(controller.getState(), reducedMotion.matches);
-      updateLayout();
+      updateUI(controller.getState());
     });
     window.newsCity = { controller, renderer, config: CONFIG };
-    presentation = enhancePresentation({
+    enhancePresentation({
       ...window.newsCity,
       data,
       countries,
-      onStats: () => setExplorerOpen(!explorerOpen, true),
-      onReplay: () => {
-        setPage('scrolly');
-        stepElements[0].querySelector('h2').focus({ preventScroll: true });
-      },
+      onCountry: openCountry,
     });
     createRouteLegend({ controller, renderer, data, config: CONFIG });
     await finishLoading();

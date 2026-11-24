@@ -10,7 +10,6 @@ export function createConfig(language = REGLAGES.defaultLanguage, metadata = {})
     i18n,
     year: metadata.year || REGLAGES.year,
     dataUrl: REGLAGES.files.data,
-    atlasUrl: REGLAGES.files.atlas,
     images: REGLAGES.files.images,
     authors: (metadata.authors || REGLAGES.schema.authors).map((item) => ({
       ...item,

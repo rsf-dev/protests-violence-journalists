@@ -3,7 +3,6 @@ export const DATA_LIMITS = Object.freeze({
   fields: 100,
   text: 20000,
   eventsBytes: 5 * 1024 * 1024,
-  atlasBytes: 2 * 1024 * 1024,
   timeoutMs: 30000,
 });
 const forbidden = new Set(['__proto__', 'constructor', 'prototype']);
@@ -95,54 +94,4 @@ export function safeSourceURL(value) {
   } catch {
     return null;
   }
-}
-export function validateAtlas(atlas) {
-  assertPlainData(atlas);
-  const objects = atlas?.objects?.countries;
-  if (
-    atlas?.type !== 'Topology' ||
-    objects?.type !== 'GeometryCollection' ||
-    !Array.isArray(objects.geometries) ||
-    objects.geometries.length > 1000 ||
-    !Array.isArray(atlas.arcs) ||
-    atlas.arcs.length > 20000
-  )
-    throw new DataLoadError('error.dataShape');
-  if (
-    !['scale', 'translate'].every(
-      (key) =>
-        Array.isArray(atlas.transform?.[key]) &&
-        atlas.transform[key].length === 2 &&
-        atlas.transform[key].every(Number.isFinite),
-    )
-  )
-    throw new DataLoadError('error.dataShape');
-  let points = 0;
-  for (const arc of atlas.arcs) {
-    if (!Array.isArray(arc)) throw new DataLoadError('error.dataShape');
-    for (const pair of arc) {
-      if (
-        !Array.isArray(pair) ||
-        pair.length !== 2 ||
-        !pair.every(Number.isFinite) ||
-        ++points > 200000
-      )
-        throw new DataLoadError('error.dataShape');
-    }
-  }
-  const checkArcs = (value) => {
-    if (Array.isArray(value)) {
-      for (const item of value) checkArcs(item);
-    } else if (
-      !Number.isSafeInteger(value) ||
-      (value < 0 ? -value - 1 : value) >= atlas.arcs.length
-    )
-      throw new DataLoadError('error.dataShape');
-  };
-  for (const geometry of objects.geometries) {
-    if (!['Polygon', 'MultiPolygon'].includes(geometry.type))
-      throw new DataLoadError('error.dataShape');
-    checkArcs(geometry.arcs);
-  }
-  return atlas;
 }
