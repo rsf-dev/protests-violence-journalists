@@ -109,7 +109,7 @@ export function createRouteLegend({ controller, renderer, data, config }) {
       );
       key.append(line, make('p', 'story-key-point', config.i18n.t('scene.pointUnit')));
     } else
-      for (const author of config.authors) {
+      for (const author of config.authors.filter((author) => scene.summary.authors[author.id])) {
         const line = make('p', 'story-key-author');
         const dot = make('i');
         dot.style.backgroundColor = author.color;

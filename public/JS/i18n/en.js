@@ -1,4 +1,11 @@
 export default {
+  'actor.multipleFull': 'Multiple or unidentified perpetrators',
+  'country.ZA': 'South Africa',
+  'country.ES': 'Spain',
+  'country.NG': 'Nigeria',
+  'country.GB': 'United Kingdom',
+  'country.UA': 'Ukraine',
+  'country.RS': 'Serbia',
   'legend.title': 'Legend',
 
   'stats.open': 'Statistics',

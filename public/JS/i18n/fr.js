@@ -1,4 +1,11 @@
 export default {
+  'actor.multipleFull': 'Auteurs multiples ou non établis',
+  'country.ZA': 'Afrique du Sud',
+  'country.ES': 'Espagne',
+  'country.NG': 'Nigeria',
+  'country.GB': 'Royaume-Uni',
+  'country.UA': 'Ukraine',
+  'country.RS': 'Serbie',
   'legend.title': 'Légende',
 
   'stats.open': 'Statistiques',

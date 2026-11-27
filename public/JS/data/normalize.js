@@ -55,12 +55,7 @@ export function buildTypical(records, authors, types, size = 100) {
   }
   return typical;
 }
-export function normalizeEvents(
-  rows,
-  countries,
-  schema,
-  { source = 'evenements.json', size = 100 } = {},
-) {
+export function normalizeEvents(rows, countries, schema, { size = 100 } = {}) {
   assertPlainData(rows);
   if (!Array.isArray(rows) || !rows.length)
     throw new Error('Le fichier doit contenir une liste de cas.');
@@ -68,47 +63,49 @@ export function normalizeEvents(
   const authors = new Map(schema.authors.map((item) => [canonical(item.sourceLabel), item]));
   const types = new Map(schema.violenceTypes.map((item) => [canonical(item.sourceLabel), item]));
   const countryIndex = new Map(
-    Object.entries(countries).map(([name, value]) => [canonical(name), value]),
+    Object.entries(countries).map(([name, value]) => [canonical(name), { ...value, name }]),
   );
   const duplicates = new Map();
-  const records = rows.map((row, index) => {
-    const line = index + 1,
-      country = countryIndex.get(canonical(row.pays)),
-      author = authors.get(canonical(row.auteur)),
-      type = types.get(canonical(row.categorie));
-    if (!country) throw new Error('Ligne ' + line + ' : pays inconnu — ' + row.pays);
-    if (!author) throw new Error('Ligne ' + line + ' : auteur inconnu — ' + row.auteur);
-    if (!type) throw new Error('Ligne ' + line + ' : catégorie inconnue — ' + row.categorie);
-    const year = Number(String(row.date).match(/\b20\d{2}\b/)?.[0]);
-    if (!year || year < 1900 || year > 2100)
-      throw new Error('Ligne ' + line + ' : année absente ou invalide de la date.');
-    const key = JSON.stringify(row),
-      group = duplicates.get(key) || [];
-    group.push(line);
-    duplicates.set(key, group);
-    return {
-      id: 'EVT-' + String(line).padStart(4, '0'),
-      sourceRow: line,
-      journalistLabel: String(row.journaliste || '').trim(),
-      media: String(row.media || '').trim(),
-      country: String(row.pays).trim(),
-      countryCode: country.id,
-      region: String(row.region || '').trim(),
-      date: String(row.date).trim(),
-      year,
-      author: author.id,
-      violenceType: type.id,
-      source: String(row.URL || '').trim(),
-      synthetic: false,
-      longitude: country.longitude,
-      latitude: country.latitude,
-    };
-  });
+  const records = rows
+    .map((row, index) => {
+      const line = index + 1,
+        country = countryIndex.get(canonical(row.pays)),
+        author = authors.get(canonical(row.auteur)),
+        type = types.get(canonical(row.categorie));
+      if (!country) throw new Error('Ligne ' + line + ' : pays inconnu — ' + row.pays);
+      if (!author) throw new Error('Ligne ' + line + ' : auteur inconnu — ' + row.auteur);
+      if (!type) throw new Error('Ligne ' + line + ' : catégorie inconnue — ' + row.categorie);
+      const year = Number(String(row.date).match(/\b20\d{2}\b/)?.[0]);
+      if (!year || year < 1900 || year > 2100)
+        throw new Error('Ligne ' + line + ' : année absente ou invalide de la date.');
+      const key = JSON.stringify(row),
+        group = duplicates.get(key) || [];
+      group.push(line);
+      duplicates.set(key, group);
+      return {
+        country: country.name,
+        countryCode: country.id,
+        year,
+        author: author.id,
+        violenceType: type.id,
+      };
+    })
+    .sort(
+      (a, b) =>
+        a.countryCode.localeCompare(b.countryCode) ||
+        a.year - b.year ||
+        a.author.localeCompare(b.author) ||
+        a.violenceType.localeCompare(b.violenceType),
+    )
+    .map((record, index) => ({ id: 'CASE-' + String(index + 1).padStart(4, '0'), ...record }));
   const catalog = (items, key) =>
     items
-      .map((item) => ({
-        ...item,
-        count: records.filter((record) => record[key] === item.id).length,
+      .map(({ id, labelKey, shortKey, color }) => ({
+        id,
+        labelKey,
+        shortKey,
+        color,
+        count: records.filter((record) => record[key] === id).length,
       }))
       .filter((item) => item.count)
       .sort(
@@ -121,7 +118,8 @@ export function normalizeEvents(
   const years = [...new Set(records.map((record) => record.year))].sort(),
     countriesCount = new Set(records.map((record) => record.countryCode)).size;
   const metadata = {
-    sourceFile: source,
+    schemaVersion: 2,
+    anonymized: true,
     synthetic: false,
     unit: 'case',
     year: years.length === 1 ? years[0] : years.join('–'),
@@ -132,19 +130,20 @@ export function normalizeEvents(
     violenceTypes: typeCatalog,
     typical: {
       size,
-      sourceCases: records.length,
       method: 'largest-remainder-by-author-then-category',
     },
-    anonymousCases: records.filter(
-      (record) => !record.journalistLabel || canonical(record.journalistLabel) === 'inconnu',
-    ).length,
-    missingSources: records.filter((record) => !record.source).length,
   };
   return {
     metadata,
     records,
     typical: buildTypical(records, authorCatalog, typeCatalog, size),
-    audit: { identicalRows: [...duplicates.values()].filter((group) => group.length > 1) },
+    audit: {
+      identicalRows: [...duplicates.values()].filter((group) => group.length > 1),
+      anonymousCases: rows.filter(
+        (row) => !row.journaliste || canonical(row.journaliste) === 'inconnu',
+      ).length,
+      missingSources: rows.filter((row) => !row.URL).length,
+    },
   };
 }
 import { DATA_LIMITS, assertPlainData } from '../core/security.js';

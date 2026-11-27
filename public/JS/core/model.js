@@ -1,11 +1,21 @@
 import { createI18n } from '../i18n/index.js';
-import { DATA_SCHEMA } from '../data/schema.js';
+import { DATA_SCHEMA, PUBLIC_DATA_FIELDS } from '../data/schema.js';
 import { DATA_LIMITS, DataLoadError, assertPlainData } from './security.js';
 import { safeSourceURL } from './security.js';
 export { safeSourceURL } from './security.js';
 
 export function validateDatasetShape(source) {
   assertPlainData(source);
+  const onlyFields = (value, allowed) => {
+    if (
+      !value ||
+      typeof value !== 'object' ||
+      Array.isArray(value) ||
+      Object.keys(value).some((key) => !allowed.includes(key))
+    )
+      throw new DataLoadError('error.dataShape');
+  };
+  onlyFields(source, PUBLIC_DATA_FIELDS.root);
   if (
     !source?.metadata ||
     !Array.isArray(source.records) ||
@@ -13,6 +23,14 @@ export function validateDatasetShape(source) {
     source.records.length > DATA_LIMITS.records ||
     !Array.isArray(source.typical) ||
     source.typical.length !== 100
+  )
+    throw new DataLoadError('error.dataShape');
+  onlyFields(source.metadata, PUBLIC_DATA_FIELDS.metadata);
+  onlyFields(source.metadata.typical, PUBLIC_DATA_FIELDS.typical);
+  if (
+    source.metadata.schemaVersion !== 2 ||
+    source.metadata.anonymized !== true ||
+    source.metadata.cases !== source.records.length
   )
     throw new DataLoadError('error.dataShape');
   for (const key of ['authors', 'violenceTypes']) {
@@ -26,17 +44,17 @@ export function validateDatasetShape(source) {
     )
       throw new DataLoadError('error.dataShape');
     for (const entry of catalog) {
+      onlyFields(entry, PUBLIC_DATA_FIELDS.catalog);
       const reference = known.get(entry.id);
       if (
         !reference ||
-        ['sourceLabel', 'labelKey', 'shortKey', 'color'].some(
-          (key) => entry[key] !== reference[key],
-        )
+        ['labelKey', 'shortKey', 'color'].some((key) => entry[key] !== reference[key])
       )
         throw new DataLoadError('error.dataShape');
     }
   }
   for (const record of source.records) {
+    onlyFields(record, PUBLIC_DATA_FIELDS.record);
     if (
       !record ||
       Array.isArray(record) ||
@@ -44,30 +62,20 @@ export function validateDatasetShape(source) {
       Object.values(record).some((value) => value !== null && typeof value === 'object')
     )
       throw new DataLoadError('error.dataShape');
-    for (const key of ['id', 'country', 'countryCode', 'author', 'violenceType', 'date'])
+    for (const key of ['id', 'country', 'countryCode', 'author', 'violenceType'])
       if (typeof record[key] !== 'string') throw new DataLoadError('error.dataShape');
-    for (const key of ['journalistLabel', 'media', 'region', 'source', 'city'])
-      if (record[key] != null && typeof record[key] !== 'string')
-        throw new DataLoadError('error.dataShape');
     if (
+      !/^CASE-\d{4,}$/.test(record.id) ||
       !/^[A-Z]{2,3}$/.test(record.countryCode) ||
       !Number.isInteger(record.year) ||
       record.year < 1900 ||
       record.year > 2100
     )
       throw new DataLoadError('error.dataShape');
-    if (/^\d{4}-\d{2}-\d{2}T/.test(record.date)) {
-      const parsed = new Date(record.date);
-      if (
-        !Number.isFinite(+parsed) ||
-        parsed.toISOString().slice(0, 10) !== record.date.slice(0, 10) ||
-        parsed.getUTCFullYear() !== record.year
-      )
-        throw new DataLoadError('error.dataShape');
-    }
   }
   const orders = new Set();
   for (const point of source.typical) {
+    onlyFields(point, PUBLIC_DATA_FIELDS.point);
     if (
       !point ||
       typeof point.id !== 'string' ||
@@ -103,15 +111,6 @@ export function validateDataset(source, config) {
       !types.has(record.violenceType)
     )
       throw new Error(t('error.category', { id: record.id }));
-    if (
-      typeof record.longitude !== 'number' ||
-      typeof record.latitude !== 'number' ||
-      !Number.isFinite(record.longitude) ||
-      !Number.isFinite(record.latitude) ||
-      Math.abs(record.longitude) > 180 ||
-      Math.abs(record.latitude) > 90
-    )
-      throw new Error(t('error.coordinates', { id: record.id }));
   }
   const typical = typicalRecords(source),
     typicalIds = new Set();
@@ -141,7 +140,7 @@ export function worldStats(records) {
 
 export function summarize(records) {
   const police = records.filter((record) => record.author === 'police');
-  const other = records.filter((record) => record.author !== 'police');
+  const other = records.filter((record) => record.author === 'other');
   const breakdown = (items) =>
     Object.fromEntries(
       DATA_SCHEMA.violenceTypes.map((type) => [
@@ -188,8 +187,6 @@ export function groupCountries(records, language = 'fr') {
       groups.set(record.countryCode, {
         id: record.countryCode,
         label: i18n.countryName(record.countryCode, record.country),
-        longitude: +record.longitude,
-        latitude: +record.latitude,
         records: [],
       });
     groups.get(record.countryCode).records.push(record);
@@ -248,9 +245,8 @@ export function orderRouteRecords(records, focus = null) {
     }
   return [...records].sort((a, b) => {
     if (focus) {
-      // Les vues de détail réunissent les violences de tous les auteurs
-      // du bloc affiché, en conservant la séparation police / autres.
-      const block = Number(a.author !== 'police') - Number(b.author !== 'police');
+      // Chaque auteur garde son propre bloc, y compris les auteurs multiples.
+      const block = authorOrder.get(a.author) - authorOrder.get(b.author);
       const category =
         counts.get(b.author + ':' + b.violenceType) - counts.get(a.author + ':' + a.violenceType) ||
         typeOrder.get(a.violenceType) - typeOrder.get(b.violenceType);
@@ -275,13 +271,11 @@ export function layoutRouteRecords(records, route, focus = null, radius = 3.25) 
     let end = start + 1;
     while (
       end < ordered.length &&
-      (focus
-        ? (ordered[end].author === 'police') === (first.author === 'police')
-        : ordered[end].author === first.author) &&
+      ordered[end].author === first.author &&
       ordered[end].violenceType === first.violenceType
     )
       end++;
-    const grouped = focus && (focus === 'police') === (first.author === 'police');
+    const grouped = focus === first.author;
     const gap = grouped ? Math.min(0.008, ((end - start) / ordered.length) * 0.12) : 0;
     for (let i = start; i < end; i++) {
       const progress = grouped

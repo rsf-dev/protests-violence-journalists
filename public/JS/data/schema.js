@@ -14,6 +14,13 @@ export const DATA_SCHEMA = {
       shortKey: 'actor.otherFull',
       color: '#356fa4',
     },
+    {
+      id: 'multiple',
+      sourceLabel: 'Auteurs multiples ou non établis',
+      labelKey: 'actor.multipleFull',
+      shortKey: 'actor.multipleFull',
+      color: '#7d6f91',
+    },
   ],
   violenceTypes: [
     {
@@ -59,4 +66,26 @@ export const DATA_SCHEMA = {
       color: '#4e897a',
     },
   ],
+};
+
+// Liste fermée : aucun champ individuel ou de provenance ne peut être publié.
+export const PUBLIC_DATA_FIELDS = {
+  root: ['metadata', 'records', 'typical'],
+  metadata: [
+    'schemaVersion',
+    'anonymized',
+    'synthetic',
+    'unit',
+    'year',
+    'years',
+    'cases',
+    'countries',
+    'authors',
+    'violenceTypes',
+    'typical',
+  ],
+  catalog: ['id', 'labelKey', 'shortKey', 'color', 'count'],
+  record: ['id', 'country', 'countryCode', 'year', 'author', 'violenceType'],
+  point: ['id', 'author', 'violenceType', 'representative', 'typicalOrder'],
+  typical: ['size', 'method'],
 };
